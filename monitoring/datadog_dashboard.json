@@ -1,0 +1,85 @@
+{
+  "title": "The Logistics Prophet",
+  "description": "Operational dashboard: data quality + model + risk queue + semantic query coverage",
+  "layout_type": "ordered",
+  "widgets": [
+    {
+      "definition": {
+        "title": "On-Time Rate",
+        "type": "query_value",
+        "requests": [{"q": "avg:semantic_control_tower.kpi.on_time_rate{env:portfolio}"}],
+        "autoscale": true
+      }
+    },
+    {
+      "definition": {
+        "title": "Late Deliveries",
+        "type": "timeseries",
+        "requests": [{"q": "sum:semantic_control_tower.kpi.sla_breach_count{env:portfolio}.as_count()"}]
+      }
+    },
+    {
+      "definition": {
+        "title": "Avg Delay Hours",
+        "type": "timeseries",
+        "requests": [{"q": "avg:semantic_control_tower.kpi.avg_delay_hours{env:portfolio}"}]
+      }
+    },
+    {
+      "definition": {
+        "title": "Model AUC",
+        "type": "query_value",
+        "requests": [{"q": "avg:semantic_control_tower.model.auc{env:portfolio}"}]
+      }
+    },
+    {
+      "definition": {
+        "title": "Model F1",
+        "type": "query_value",
+        "requests": [{"q": "avg:semantic_control_tower.model.f1{env:portfolio}"}]
+      }
+    },
+    {
+      "definition": {
+        "title": "Critical Items",
+        "type": "timeseries",
+        "requests": [{"q": "sum:semantic_control_tower.risk_queue.critical_count{env:portfolio}"}]
+      }
+    },
+    {
+      "definition": {
+        "title": "Work Items",
+        "type": "query_value",
+        "requests": [{"q": "avg:semantic_control_tower.service.unresolved{env:portfolio}"}]
+      }
+    },
+    {
+      "definition": {
+        "title": "Critical Waiting",
+        "type": "query_value",
+        "requests": [{"q": "avg:semantic_control_tower.service.critical_open{env:portfolio}"}]
+      }
+    },
+    {
+      "definition": {
+        "title": "Data Quality Fails",
+        "type": "query_value",
+        "requests": [{"q": "sum:semantic_control_tower.quality.fail_count{env:portfolio}"}]
+      }
+    },
+    {
+      "definition": {
+        "title": "Semantic Query Count",
+        "type": "query_value",
+        "requests": [{"q": "avg:semantic_control_tower.semantic.query_count{env:portfolio}"}]
+      }
+    },
+    {
+      "definition": {
+        "title": "Pipeline Success",
+        "type": "query_value",
+        "requests": [{"q": "avg:semantic_control_tower.pipeline.success{env:portfolio}"}]
+      }
+    }
+  ]
+}
