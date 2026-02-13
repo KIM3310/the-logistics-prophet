@@ -1,0 +1,47 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Compile
+        run: |
+          python -m py_compile app/dashboard.py
+          python -m py_compile scripts/run_pipeline.py
+
+      - name: Run full pipeline
+        run: |
+          python scripts/run_pipeline.py
+
+      - name: Validate outputs
+        run: |
+          test -f data/model/model_artifact.json
+          test -f data/model/selected_model.pkl
+          test -f data/processed/service_store.db
+          test -f data/output/daily_risk_queue.csv
+          test -f data/output/data_quality_report.json
+          test -f data/output/sparql_results.json
+          test -f data/output/shap_global_importance.csv
+
+      - name: Run tests
+        run: |
+          python -m unittest discover -s tests -p 'test_*.py'
