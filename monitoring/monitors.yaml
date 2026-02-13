@@ -1,0 +1,72 @@
+monitors:
+  - name: "[Semantic CT] On-Time Rate Drop"
+    type: "query alert"
+    query: "avg(last_30m):avg:semantic_control_tower.kpi.on_time_rate{env:portfolio} < 0.88"
+    message: "On-time rate is below target. Inspect delay root causes and carrier mix."
+    tags:
+      - "service:semantic-control-tower"
+      - "env:portfolio"
+      - "team:ops"
+    options:
+      notify_no_data: false
+      include_tags: true
+
+  - name: "[Semantic CT] Critical Queue Spike"
+    type: "query alert"
+    query: "avg(last_15m):sum:semantic_control_tower.risk_queue.critical_count{env:portfolio} > 12"
+    message: "Critical risk queue spiked. Trigger escalation protocol."
+    tags:
+      - "service:semantic-control-tower"
+      - "env:portfolio"
+      - "team:ops"
+    options:
+      notify_no_data: false
+      include_tags: true
+
+  - name: "[Semantic CT] Model AUC Regression"
+    type: "query alert"
+    query: "avg(last_1d):avg:semantic_control_tower.model.auc{env:portfolio} < 0.72"
+    message: "Model AUC below acceptance threshold. Retraining and data review required."
+    tags:
+      - "service:semantic-control-tower"
+      - "env:portfolio"
+      - "team:ml"
+    options:
+      notify_no_data: false
+      include_tags: true
+
+  - name: "[Semantic CT] Data Quality Failure"
+    type: "query alert"
+    query: "sum(last_15m):sum:semantic_control_tower.quality.fail_count{env:portfolio} > 0"
+    message: "Data quality gate failed. Halt downstream jobs and inspect quality report."
+    tags:
+      - "service:semantic-control-tower"
+      - "env:portfolio"
+      - "team:data"
+    options:
+      notify_no_data: false
+      include_tags: true
+
+  - name: "[Semantic CT] Pipeline Failure"
+    type: "query alert"
+    query: "avg(last_15m):avg:semantic_control_tower.pipeline.success{env:portfolio} < 1"
+    message: "Pipeline failure detected. Check runbook recovery steps."
+    tags:
+      - "service:semantic-control-tower"
+      - "env:portfolio"
+      - "team:data"
+    options:
+      notify_no_data: false
+      include_tags: true
+
+  - name: "[Semantic CT] Service Backlog Overflow"
+    type: "query alert"
+    query: "avg(last_30m):avg:semantic_control_tower.service.unresolved{env:portfolio} > 35"
+    message: "Service unresolved queue exceeded threshold. Rebalance ownership and mitigation capacity."
+    tags:
+      - "service:semantic-control-tower"
+      - "env:portfolio"
+      - "team:ops"
+    options:
+      notify_no_data: false
+      include_tags: true

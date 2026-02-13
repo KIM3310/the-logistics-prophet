@@ -1,0 +1,123 @@
+@prefix ex: <http://example.com/supply-chain#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+ex:SupplyChainOntology a owl:Ontology ;
+  rdfs:label "Semantic Supply Chain Ontology" ;
+  rdfs:comment "Operational ontology for shipment delay risk monitoring and intervention." .
+
+ex:Order a owl:Class ; rdfs:label "Order" .
+ex:Shipment a owl:Class ; rdfs:label "Shipment" .
+ex:Warehouse a owl:Class ; rdfs:label "Warehouse" .
+ex:Carrier a owl:Class ; rdfs:label "Carrier" .
+ex:Customer a owl:Class ; rdfs:label "Customer" .
+ex:Product a owl:Class ; rdfs:label "Product" .
+ex:SLA a owl:Class ; rdfs:label "Service Level Agreement" .
+ex:DelayEvent a owl:Class ; rdfs:label "Delay Event" .
+ex:RiskState a owl:Class ; rdfs:label "Risk State" .
+
+ex:placedBy a owl:ObjectProperty ;
+  rdfs:domain ex:Order ;
+  rdfs:range ex:Customer .
+
+ex:containsProduct a owl:ObjectProperty ;
+  rdfs:domain ex:Order ;
+  rdfs:range ex:Product .
+
+ex:fulfilledFrom a owl:ObjectProperty ;
+  rdfs:domain ex:Order ;
+  rdfs:range ex:Warehouse .
+
+ex:hasShipment a owl:ObjectProperty ;
+  rdfs:domain ex:Order ;
+  rdfs:range ex:Shipment .
+
+ex:handledBy a owl:ObjectProperty ;
+  rdfs:domain ex:Shipment ;
+  rdfs:range ex:Carrier .
+
+ex:violates a owl:ObjectProperty ;
+  rdfs:domain ex:Shipment ;
+  rdfs:range ex:SLA .
+
+ex:hasDelayEvent a owl:ObjectProperty ;
+  rdfs:domain ex:Shipment ;
+  rdfs:range ex:DelayEvent .
+
+ex:hasRiskState a owl:ObjectProperty ;
+  rdfs:domain ex:Shipment ;
+  rdfs:range ex:RiskState .
+
+ex:orderDate a owl:DatatypeProperty ;
+  rdfs:domain ex:Order ;
+  rdfs:range xsd:date .
+
+ex:promisedDays a owl:DatatypeProperty ;
+  rdfs:domain ex:Order ;
+  rdfs:range xsd:integer .
+
+ex:orderValueUsd a owl:DatatypeProperty ;
+  rdfs:domain ex:Order ;
+  rdfs:range xsd:decimal .
+
+ex:distanceKm a owl:DatatypeProperty ;
+  rdfs:domain ex:Shipment ;
+  rdfs:range xsd:decimal .
+
+ex:weatherSeverity a owl:DatatypeProperty ;
+  rdfs:domain ex:Shipment ;
+  rdfs:range xsd:decimal .
+
+ex:warehouseLoadPct a owl:DatatypeProperty ;
+  rdfs:domain ex:Shipment ;
+  rdfs:range xsd:decimal .
+
+ex:deliveredOnTime a owl:DatatypeProperty ;
+  rdfs:domain ex:Shipment ;
+  rdfs:range xsd:boolean .
+
+ex:delayHours a owl:DatatypeProperty ;
+  rdfs:domain ex:Shipment ;
+  rdfs:range xsd:decimal .
+
+ex:reliabilityScore a owl:DatatypeProperty ;
+  rdfs:domain ex:Carrier ;
+  rdfs:range xsd:decimal .
+
+ex:delayCause a owl:DatatypeProperty ;
+  rdfs:domain ex:DelayEvent ;
+  rdfs:range xsd:string .
+
+ex:severity a owl:DatatypeProperty ;
+  rdfs:domain ex:DelayEvent ;
+  rdfs:range xsd:string .
+
+ex:riskScore a owl:DatatypeProperty ;
+  rdfs:domain ex:RiskState ;
+  rdfs:range xsd:decimal .
+
+ex:riskBand a owl:DatatypeProperty ;
+  rdfs:domain ex:RiskState ;
+  rdfs:range xsd:string .
+
+ex:SLA_Standard a ex:SLA ;
+  rdfs:label "Standard Delivery SLA" .
+
+ex:ShipmentRiskHigh a owl:Class ;
+  owl:equivalentClass [
+    a owl:Class ;
+    owl:intersectionOf (
+      ex:Shipment
+      [
+        a owl:Restriction ;
+        owl:onProperty ex:delayHours ;
+        owl:someValuesFrom [
+          a rdfs:Datatype ;
+          owl:onDatatype xsd:decimal ;
+          owl:withRestrictions ( [ xsd:minInclusive "24"^^xsd:decimal ] )
+        ]
+      ]
+    )
+  ] .
