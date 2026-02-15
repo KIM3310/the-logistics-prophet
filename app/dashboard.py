@@ -2411,6 +2411,16 @@ def main() -> None:
     cinematic = mode == "cinematic"
     if mode != "plain":
         inject_css(cinematic=cinematic)
+
+    # Fast way to isolate "blank page" problems (browser/JS/websocket/etc).
+    # If this doesn't render, the issue is almost certainly on the client side.
+    smoke = (_query_param("smoke") or "").strip().lower()
+    if smoke in {"1", "true", "yes", "on"}:
+        st.title("Smoke Test")
+        st.write("If you can read this, the Streamlit frontend is running.")
+        st.write({"ui_mode": mode, "cinematic": cinematic})
+        st.stop()
+
     user = render_login_gate()
 
     metrics = load_json(METRICS_PATH)
