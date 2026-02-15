@@ -71,6 +71,9 @@ demo-local-kill:
 demo-local-debug:
 	bash scripts/start_demo_local.sh --kill-port --debug
 
+demo-local-open:
+	bash scripts/start_demo_local.sh --kill-port --open
+
 docker-build:
 	docker build -t semantic-control-tower:latest .
 

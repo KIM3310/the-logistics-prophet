@@ -8,6 +8,8 @@ PYTHON_BIN="${PYTHON_BIN:-python3}"
 PORT="${PORT:-8501}"
 KILL_PORT="${KILL_PORT:-0}"
 LOG_LEVEL="${LOG_LEVEL:-info}"
+AUTO_PORT="${AUTO_PORT:-1}"
+OPEN_BROWSER="${OPEN_BROWSER:-0}"
 
 VENV_DIR="${VENV_DIR:-.venv}"
 VENV_PY="$VENV_DIR/bin/python"
@@ -18,6 +20,8 @@ for arg in "$@"; do
     --force) FORCE_PIPELINE=1 ;;
     --kill-port) KILL_PORT=1 ;;
     --debug) LOG_LEVEL=debug ;;
+    --no-auto-port) AUTO_PORT=0 ;;
+    --open) OPEN_BROWSER=1 ;;
   esac
 done
 
@@ -66,14 +70,42 @@ if [[ -n "$existing_pid" ]]; then
     kill "$existing_pid" 2>/dev/null || true
     sleep 0.2
   else
-    echo "[demo] ERROR: port $PORT is already in use (pid=$existing_pid)"
-    echo "[demo] Fix: run with '--kill-port' or choose a different port:"
-    echo "[demo]   PORT=8502 bash scripts/start_demo_local.sh"
-    exit 1
+    if [[ "$AUTO_PORT" -eq 1 ]]; then
+      start_port="$PORT"
+      found=0
+      for p in $(seq "$start_port" $((start_port + 20))); do
+        pid="$(lsof -t -nP -iTCP:"$p" -sTCP:LISTEN 2>/dev/null || true)"
+        if [[ -z "$pid" ]]; then
+          PORT="$p"
+          found=1
+          break
+        fi
+      done
+      if [[ "$found" -eq 0 ]]; then
+        echo "[demo] ERROR: no free port found near $start_port"
+        exit 1
+      fi
+      echo "[demo] port $start_port is busy (pid=$existing_pid) -> using free port $PORT"
+    else
+      echo "[demo] ERROR: port $PORT is already in use (pid=$existing_pid)"
+      echo "[demo] Fix: run with '--kill-port' or choose a different port:"
+      echo "[demo]   PORT=8502 bash scripts/start_demo_local.sh"
+      exit 1
+    fi
   fi
 fi
 
-echo "[demo] starting dashboard: http://127.0.0.1:${PORT}"
+url="http://127.0.0.1:${PORT}"
+echo "[demo] starting dashboard: $url"
+
+if [[ "$OPEN_BROWSER" -eq 1 ]]; then
+  if command -v open >/dev/null 2>&1; then
+    (open "$url" >/dev/null 2>&1 || true) &
+  elif command -v xdg-open >/dev/null 2>&1; then
+    (xdg-open "$url" >/dev/null 2>&1 || true) &
+  fi
+fi
+
 exec "$VENV_PY" -m streamlit run app/dashboard.py \
   --server.headless true \
   --server.address 127.0.0.1 \
