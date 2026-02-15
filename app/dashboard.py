@@ -587,11 +587,33 @@ footer { visibility: hidden; }
 
 .auth-box {
   max-width: 520px;
-  margin: 10vh auto;
+  margin: 10vh auto 14px auto;
+  border: 1px solid rgba(15,98,91,0.22);
+  border-radius: 22px;
+  background: rgba(255,255,255,.92);
+  padding: 24px;
+  box-shadow: 0 26px 46px rgba(46,36,28,0.12);
+}
+
+div[data-testid="stForm"] {
+  max-width: 520px;
+  margin: 0 auto;
   border: 1px solid var(--line);
   border-radius: 20px;
-  background: rgba(255,255,255,.78);
-  padding: 22px;
+  background: rgba(255,255,255,.88);
+  padding: 16px 16px 14px 16px;
+  box-shadow: 0 18px 30px rgba(44,35,25,0.08);
+}
+
+div[data-testid="stTextInput"] label {
+  color: var(--ink) !important;
+}
+
+div[data-testid="stTextInput"] input {
+  background: rgba(255,255,255,.96) !important;
+  color: var(--ink) !important;
+  border: 1px solid var(--line) !important;
+  border-radius: 14px !important;
 }
 
 div[data-testid="stButton"] > button,
