@@ -4,12 +4,13 @@ import json
 import hashlib
 import io
 import base64
+import os
 import subprocess
 import sys
 import zipfile
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
-from typing import Dict, List, Tuple
+from typing import Dict, List, Optional, Tuple
 
 import pandas as pd
 import plotly.graph_objects as go
@@ -104,6 +105,43 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="collapsed",
 )
+
+
+def _query_param(name: str) -> Optional[str]:
+    # Support both older and newer Streamlit query param APIs.
+    try:
+        params = st.query_params  # type: ignore[attr-defined]
+        if name in params:
+            value = params.get(name)
+            if isinstance(value, list):
+                return value[0] if value else None
+            return str(value) if value is not None else None
+    except Exception:
+        pass
+
+    try:
+        params = st.experimental_get_query_params()  # type: ignore[attr-defined]
+        if name in params and params[name]:
+            return str(params[name][0])
+    except Exception:
+        pass
+    return None
+
+
+def cinematic_ui_enabled() -> bool:
+    """
+    Visual-heavy UI (animated glow + hero media) can trigger a blank/black screen on some browsers/GPU stacks.
+    Default is OFF for reliability. Enable via:
+      1) `?cinematic=1` query param, or
+      2) `LP_CINEMATIC_UI=1` environment variable.
+    """
+    qp = _query_param("cinematic")
+    if qp is not None:
+        return qp.strip().lower() in {"1", "true", "yes", "on"}
+    env = os.getenv("LP_CINEMATIC_UI", "").strip().lower()
+    if not env:
+        return False
+    return env in {"1", "true", "yes", "on"}
 
 
 @st.cache_data(show_spinner=False)
@@ -216,34 +254,9 @@ def load_service_queue() -> pd.DataFrame:
     return frame.sort_values("risk_score", ascending=False).reset_index(drop=True)
 
 
-def inject_css() -> None:
-    st.markdown(
+def inject_css(*, cinematic: bool) -> None:
+    aurora_css = (
         """
-<style>
-/* Offline-first: avoid externally hosted fonts. */
-
-:root {
-  --paper: #f1ede3;
-  --ink: #13110d;
-  --muted: #5c554a;
-  --line: #d9d0c4;
-  --ocean: #0f625b;
-  --clay: #ad5e4a;
-  --glass: rgba(255,255,255,0.68);
-}
-
-#MainMenu, header, footer { visibility: hidden; }
-
-.stApp {
-  position: relative;
-  isolation: isolate;
-  color: var(--ink);
-  background:
-    radial-gradient(1100px 500px at -5% -12%, #ddeae6 0%, transparent 60%),
-    radial-gradient(900px 500px at 104% 3%, #eddcd2 0%, transparent 56%),
-    linear-gradient(180deg, #f6f2ea 0%, #ece5d7 100%);
-}
-
 .stApp::before {
   content: "";
   position: fixed;
@@ -283,6 +296,62 @@ def inject_css() -> None:
   100% { transform: translate(-1%, 2%) scale(1.07); }
 }
 
+@media (prefers-reduced-motion: reduce) {
+  .stApp::before, .stApp::after { animation: none !important; }
+}
+"""
+        if cinematic
+        else """
+.stApp::before {
+  content: "";
+  position: fixed;
+  inset: -18% -12%;
+  background:
+    radial-gradient(680px 420px at 14% 20%, rgba(15,98,91,.10) 0%, transparent 62%),
+    radial-gradient(820px 480px at 92% 18%, rgba(173,94,74,.10) 0%, transparent 60%),
+    radial-gradient(720px 520px at 52% 86%, rgba(196,168,111,.08) 0%, transparent 64%);
+  filter: blur(28px) saturate(1.04);
+  opacity: 0.85;
+  pointer-events: none;
+  z-index: 0;
+}
+"""
+    )
+
+    css = (
+        """
+<style>
+/* Offline-first: avoid externally hosted fonts. */
+
+:root {
+  --paper: #f1ede3;
+  --ink: #13110d;
+  --muted: #5c554a;
+  --line: #d9d0c4;
+  --ocean: #0f625b;
+  --clay: #ad5e4a;
+  --glass: rgba(255,255,255,0.68);
+}
+
+#MainMenu, header, footer { visibility: hidden; }
+
+.stApp, div[data-testid="stAppViewContainer"] {
+  color: var(--ink);
+  background:
+    radial-gradient(1100px 500px at -5% -12%, #ddeae6 0%, transparent 60%),
+    radial-gradient(900px 500px at 104% 3%, #eddcd2 0%, transparent 56%),
+    linear-gradient(180deg, #f6f2ea 0%, #ece5d7 100%);
+}
+
+.stApp {
+  position: relative;
+  isolation: isolate;
+}
+
+"""
+        + aurora_css
+        + """
+
 * {
   font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
 }
@@ -304,19 +373,6 @@ def inject_css() -> None:
   overflow: hidden;
   box-shadow: 0 30px 50px rgba(46,36,28,0.1);
   margin-bottom: 16px;
-}
-
-.hero-aurora {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  opacity: 0.32;
-  mix-blend-mode: multiply;
-  filter: saturate(1.08) contrast(1.02);
-  pointer-events: none;
-  z-index: 1;
 }
 
 .hero::before {
@@ -530,6 +586,13 @@ div[data-testid="stDownloadButton"] > button:disabled {
   transform: none;
 }
 
+/* Subtle styling for any images (e.g., cinematic aurora banner). */
+div[data-testid="stImage"] img {
+  border-radius: 22px;
+  border: 1px solid var(--line);
+  box-shadow: 0 24px 40px rgba(46,36,28,0.10);
+}
+
 @media (max-width: 980px) {
   .title-row {
     flex-direction: column;
@@ -549,9 +612,10 @@ div[data-testid="stDownloadButton"] > button:disabled {
   }
 }
 </style>
-        """,
-        unsafe_allow_html=True,
+"""
     )
+
+    st.markdown(css, unsafe_allow_html=True)
 
 
 def quality_badge(status: str) -> str:
@@ -815,6 +879,8 @@ def render_hero(
     quality: Dict[str, object],
     queue: pd.DataFrame,
     service_summary: Dict[str, object],
+    *,
+    cinematic: bool,
 ) -> None:
     latest = metrics.get("kpi_latest", {})
     model_metrics = metrics.get("model_test_metrics", {})
@@ -823,13 +889,15 @@ def render_hero(
     breaches = int(float(latest.get("sla_breach_count", 0)))
     auc = float(model_metrics.get("auc", 0.0))
     max_score = float(queue["risk_score"].max()) if not queue.empty else 0.0
-    aurora = load_asset_data_url(AURORA_BANNER_PATH, "image/gif")
-    aurora_html = f'<img class="hero-aurora" src="{aurora}" alt="" />' if aurora else ""
+
+    # Cinematic UI can be heavy; render the GIF via Streamlit media to avoid
+    # multi-MB base64 payloads in the app delta/websocket (which can cause blank screens).
+    if cinematic and AURORA_BANNER_PATH.exists():
+        st.image(str(AURORA_BANNER_PATH), use_container_width=True)
 
     st.markdown(
         f"""
 <section class="hero">
-  {aurora_html}
   <div class="hero-inner">
     <div class="kicker">Live Ops Board</div>
     <div class="title-row">
@@ -2289,7 +2357,8 @@ def render_admin_panel(user: Dict[str, object]) -> None:
 
 def main() -> None:
     init_service_store(SERVICE_DB_PATH)
-    inject_css()
+    cinematic = cinematic_ui_enabled()
+    inject_css(cinematic=cinematic)
     user = render_login_gate()
 
     metrics = load_json(METRICS_PATH)
@@ -2343,7 +2412,7 @@ def main() -> None:
     )
 
     with tabs[0]:
-        render_hero(metrics, training, quality, queue, service_summary)
+        render_hero(metrics, training, quality, queue, service_summary, cinematic=cinematic)
         with st.expander("Guide"):
             st.markdown(
                 """
