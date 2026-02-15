@@ -591,6 +591,7 @@ def verify_audit_chain(path: Path = SERVICE_DB_PATH, limit: int = 5000) -> Dict[
     prev_hash = "GENESIS"
     checked = 0
     skipped_legacy = 0
+    latest_checked_id = 0
     for row in rows:
         row_prev_hash = str(row["prev_hash"] or "")
         row_event_hash = str(row["event_hash"] or "")
@@ -627,6 +628,7 @@ def verify_audit_chain(path: Path = SERVICE_DB_PATH, limit: int = 5000) -> Dict[
                 "skipped_legacy": skipped_legacy,
                 "failed_id": int(row["id"]),
                 "reason": "prev_hash_mismatch",
+                "latest_hash": prev_hash,
             }
 
         expected_hash = _hash_payload(payload, prev_hash)
@@ -637,12 +639,20 @@ def verify_audit_chain(path: Path = SERVICE_DB_PATH, limit: int = 5000) -> Dict[
                 "skipped_legacy": skipped_legacy,
                 "failed_id": int(row["id"]),
                 "reason": "event_hash_mismatch",
+                "latest_hash": prev_hash,
             }
 
         prev_hash = row_event_hash
         checked += 1
+        latest_checked_id = int(row["id"])
 
-    return {"valid": True, "checked": checked, "skipped_legacy": skipped_legacy}
+    return {
+        "valid": True,
+        "checked": checked,
+        "skipped_legacy": skipped_legacy,
+        "latest_hash": prev_hash,
+        "latest_checked_id": latest_checked_id,
+    }
 
 
 def upsert_queue_rows(rows: List[Dict[str, object]], path: Path = SERVICE_DB_PATH) -> int:

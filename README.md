@@ -1,7 +1,10 @@
-# The Logistics Prophet (Portfolio-Grade)
+# The Logistics Prophet (Portfolio)
 
 온톨로지 + 데이터 품질 게이트 + 모델 경쟁 실험 + SHAP 설명 + Datadog 운영 연동까지 포함한
 실서비스 스타일 내부 관제 프로젝트입니다.
+
+Note: 개인 포트폴리오 프로젝트입니다. 데이터는 synthetic이며 외부 API 없이도 로컬에서 재현 가능합니다.
+Datadog 전송은 옵션이며, 키가 없으면 dry-run/파일 출력 형태로 동작합니다.
 
 ## 서비스 정의
 배송 지연 리스크를 **사전에 예측**하고,
@@ -15,6 +18,8 @@
 - Ontology operationalization: RDF instance graph + SPARQL competency queries
 - Datadog operational integration (metrics, dashboard, monitors, replay)
 - Service operations console (owner assignment, status workflow, incident tracking, run history)
+- Evidence pack export (ZIP + manifest with file hashes)
+- Postmortem draft export (Markdown + audit timeline)
 - Bulk queue action (multi-shipment status/owner/ETA/note update)
 - Ops health analytics (overdue ETA, stale queue, critical unassigned, owner backlog)
 - Rule-based incident recommendation engine + one-click incident creation
@@ -29,12 +34,12 @@
 - Role-based access control (admin/operator/viewer) with authenticated login
 - Audit trail with hash-chain integrity verification
 - Atomic SQLite mart build + stale-aware pipeline lock for safer concurrent execution
-- Designer-level Streamlit UI (editorial minimal + responsive)
+- Streamlit ops console UI (core board, queue, health, incidents)
 - Docker deployment + GitHub Actions CI
 
 ## 프로젝트 구조
 ```text
-semantic-control-tower/
+the-logistics-prophet/
   app/
     dashboard.py
   docs/
@@ -71,6 +76,8 @@ semantic-control-tower/
     modeling.py
     scoring.py
     ops_output.py
+  RUNBOOK.md
+  POSTMORTEM_TEMPLATE.md
   .github/workflows/ci.yml
   Dockerfile
   docker-compose.yml
@@ -78,8 +85,10 @@ semantic-control-tower/
 
 ## 빠른 실행
 ```bash
-cd /Users/kim/semantic-control-tower
-python3 -m pip install --user -r requirements.txt
+cd the-logistics-prophet-main
+python3 -m venv .venv
+source .venv/bin/activate
+python3 -m pip install -r requirements.txt
 python3 scripts/run_pipeline.py
 python3 -m streamlit run app/dashboard.py
 ```
@@ -91,6 +100,7 @@ python3 -m streamlit run app/dashboard.py
 
 ## One-command 옵션
 ```bash
+make demo-local
 make run
 make dashboard
 ```
@@ -158,3 +168,4 @@ python3 -m unittest discover -s tests -p 'test_*.py'
 2. Dashboard에서 KPI/SHAP/Graph + `Core Board`/`Next Actions`/`Queue`/`Update` 시연
 3. Datadog dry-run 및 replay 시나리오 시연
 4. Runbook 기반 운영 절차 설명
+5. Governance 탭에서 Evidence Pack / Postmortem Export 시연
