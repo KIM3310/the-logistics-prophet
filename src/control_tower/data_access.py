@@ -41,6 +41,45 @@ def fetch_feature_frame(sqlite_path: Path) -> pd.DataFrame:
     return frame
 
 
+def fetch_shipment_feature_row(sqlite_path: Path, shipment_id: str) -> Dict[str, object]:
+    shipment_id = str(shipment_id or "").strip()
+    if not shipment_id:
+        raise ValueError("shipment_id is required")
+
+    cols = [
+        "shipment_id",
+        "order_id",
+        "ship_date",
+        "order_date",
+        "customer_id",
+        "product_id",
+        "warehouse_id",
+        "carrier_id",
+        *FEATURE_COLUMNS,
+        TARGET_COLUMN,
+        "delay_hours",
+    ]
+    sql = f"SELECT {', '.join(cols)} FROM model_features WHERE shipment_id = ? LIMIT 1"
+
+    conn = sqlite3.connect(sqlite_path)
+    conn.row_factory = sqlite3.Row
+    try:
+        row = conn.execute(sql, (shipment_id,)).fetchone()
+    finally:
+        conn.close()
+
+    if row is None:
+        return {}
+
+    payload = dict(row)
+    for col in FEATURE_COLUMNS + [TARGET_COLUMN, "delay_hours"]:
+        try:
+            payload[col] = float(payload[col]) if payload.get(col) is not None else None
+        except (TypeError, ValueError):
+            payload[col] = None
+    return payload
+
+
 def split_frame_by_time(frame: pd.DataFrame, test_fraction: float = 0.2) -> Tuple[pd.DataFrame, pd.DataFrame]:
     sorted_frame = frame.sort_values("ship_date").reset_index(drop=True)
     split_idx = int(len(sorted_frame) * (1 - test_fraction))

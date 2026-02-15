@@ -24,7 +24,7 @@ if [[ ! -d "$VENV_DIR" ]]; then
 fi
 
 echo "[demo] installing dependencies"
-"$VENV_PY" -m pip install -r requirements.txt >/dev/null
+"$VENV_PY" -m pip install --disable-pip-version-check -r requirements.txt >/dev/null
 
 need_pipeline=0
 required_files=(
@@ -57,4 +57,3 @@ echo "[demo] starting dashboard: http://127.0.0.1:${PORT}"
 exec "$VENV_PY" -m streamlit run app/dashboard.py \
   --server.address 127.0.0.1 \
   --server.port "$PORT"
-
