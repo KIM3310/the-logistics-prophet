@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import hashlib
 import io
+import base64
 import subprocess
 import sys
 import zipfile
@@ -60,6 +61,8 @@ PIPELINE_STATUS_PATH = ROOT / "data" / "output" / "pipeline_status.json"
 SQLITE_PATH = ROOT / "data" / "processed" / "control_tower.db"
 SHAP_LOCAL_PATH = ROOT / "data" / "output" / "shap_local_explanations.csv"
 RDF_INSTANCE_PATH = ROOT / "data" / "semantic" / "instance_graph.ttl"
+ASSET_DIR = ROOT / "app" / "assets"
+AURORA_BANNER_PATH = ASSET_DIR / "aurora_banner.gif"
 
 SELECTED_SHIPMENT_KEY = "selected_shipment_id"
 
@@ -109,6 +112,15 @@ def load_json(path: Path) -> Dict[str, object]:
         return {}
     with path.open("r", encoding="utf-8") as f:
         return json.load(f)
+
+
+@st.cache_data(show_spinner=False)
+def load_asset_data_url(path: Path, mime: str) -> str:
+    if not path.exists():
+        return ""
+    raw = path.read_bytes()
+    encoded = base64.b64encode(raw).decode("ascii")
+    return f"data:{mime};base64,{encoded}"
 
 
 @st.cache_data(show_spinner=False)
@@ -223,11 +235,52 @@ def inject_css() -> None:
 #MainMenu, header, footer { visibility: hidden; }
 
 .stApp {
+  position: relative;
+  isolation: isolate;
   color: var(--ink);
   background:
     radial-gradient(1100px 500px at -5% -12%, #ddeae6 0%, transparent 60%),
     radial-gradient(900px 500px at 104% 3%, #eddcd2 0%, transparent 56%),
     linear-gradient(180deg, #f6f2ea 0%, #ece5d7 100%);
+}
+
+.stApp::before {
+  content: "";
+  position: fixed;
+  inset: -20% -12%;
+  background:
+    radial-gradient(700px 380px at 12% 18%, rgba(15,98,91,.14) 0%, transparent 60%),
+    radial-gradient(860px 460px at 92% 16%, rgba(173,94,74,.14) 0%, transparent 58%),
+    radial-gradient(760px 520px at 55% 86%, rgba(196,168,111,.10) 0%, transparent 62%);
+  filter: blur(62px) saturate(1.12);
+  opacity: 0.9;
+  pointer-events: none;
+  z-index: 0;
+  animation: auroraDrift 18s ease-in-out infinite alternate;
+}
+
+.stApp::after {
+  content: "";
+  position: fixed;
+  inset: -18% -10%;
+  background:
+    radial-gradient(520px 340px at 22% 78%, rgba(15,98,91,.10) 0%, transparent 62%),
+    radial-gradient(620px 380px at 82% 70%, rgba(173,94,74,.10) 0%, transparent 60%);
+  filter: blur(70px) saturate(1.08);
+  opacity: 0.55;
+  pointer-events: none;
+  z-index: 0;
+  animation: auroraDrift2 22s ease-in-out infinite alternate;
+}
+
+@keyframes auroraDrift {
+  0% { transform: translate(-2%, -1%) scale(1.02); }
+  100% { transform: translate(2%, 1%) scale(1.06); }
+}
+
+@keyframes auroraDrift2 {
+  0% { transform: translate(1%, -2%) scale(1.02); }
+  100% { transform: translate(-1%, 2%) scale(1.07); }
 }
 
 * {
@@ -236,6 +289,8 @@ def inject_css() -> None:
 
 .block-container {
   max-width: 1240px;
+  position: relative;
+  z-index: 1;
   padding-top: 1.2rem;
   padding-bottom: 2.5rem;
 }
@@ -249,6 +304,19 @@ def inject_css() -> None:
   overflow: hidden;
   box-shadow: 0 30px 50px rgba(46,36,28,0.1);
   margin-bottom: 16px;
+}
+
+.hero-aurora {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0.32;
+  mix-blend-mode: multiply;
+  filter: saturate(1.08) contrast(1.02);
+  pointer-events: none;
+  z-index: 1;
 }
 
 .hero::before {
@@ -755,10 +823,13 @@ def render_hero(
     breaches = int(float(latest.get("sla_breach_count", 0)))
     auc = float(model_metrics.get("auc", 0.0))
     max_score = float(queue["risk_score"].max()) if not queue.empty else 0.0
+    aurora = load_asset_data_url(AURORA_BANNER_PATH, "image/gif")
+    aurora_html = f'<img class="hero-aurora" src="{aurora}" alt="" />' if aurora else ""
 
     st.markdown(
         f"""
 <section class="hero">
+  {aurora_html}
   <div class="hero-inner">
     <div class="kicker">Live Ops Board</div>
     <div class="title-row">
@@ -1468,9 +1539,11 @@ def render_shipment_explain_panel(
     shap_local: pd.DataFrame,
     graph,
     user: Dict[str, object],
+    panel_key: str = "default",
 ) -> None:
     st.markdown('<section class="panel"><h3>Explain</h3>', unsafe_allow_html=True)
 
+    panel_key = str(panel_key or "default").strip() or "default"
     shipment_id = str(shipment_id or "").strip()
     if not shipment_id:
         st.caption("Pick a shipment from Worklist / Queue / Update to see explainability and evidence.")
@@ -1498,17 +1571,25 @@ def render_shipment_explain_panel(
         st.caption("Evidence next to action: validate drivers, then execute the next step with an auditable change.")
         b1, b2, b3 = st.columns([1, 1.35, 1])
         with b1:
-            assign = st.button("Assign Me", key=f"ex_assign_{shipment_id}", use_container_width=True)
+            assign = st.button(
+                "Assign Me",
+                key=f"{panel_key}_ex_assign_{shipment_id}",
+                use_container_width=True,
+            )
         with b2:
             move_disabled = next_status == current_status
             move = st.button(
                 f"Move Next ({status_display(next_status)})",
-                key=f"ex_move_{shipment_id}",
+                key=f"{panel_key}_ex_move_{shipment_id}",
                 use_container_width=True,
                 disabled=move_disabled,
             )
         with b3:
-            eta_plus = st.button("ETA +2h", key=f"ex_eta_{shipment_id}", use_container_width=True)
+            eta_plus = st.button(
+                "ETA +2h",
+                key=f"{panel_key}_ex_eta_{shipment_id}",
+                use_container_width=True,
+            )
 
         if assign:
             try:
@@ -1699,6 +1780,7 @@ def render_shipment_explain_panel(
         file_name=f"triage-{shipment_id}.md",
         mime="text/markdown",
         use_container_width=True,
+        key=f"{panel_key}_triage_{shipment_id}",
     )
 
     if can_incident:
@@ -1725,7 +1807,11 @@ def render_shipment_explain_panel(
         ]
         description = "\n".join([str(x) for x in desc_lines if str(x).strip()])
 
-        if st.button("Escalate: Create/Update Incident (Deduplicated)", key=f"ex_inc_{shipment_id}", use_container_width=True):
+        if st.button(
+            "Escalate: Create/Update Incident (Deduplicated)",
+            key=f"{panel_key}_ex_inc_{shipment_id}",
+            use_container_width=True,
+        ):
             try:
                 result = upsert_incident_from_recommendation(
                     recommendation={
@@ -2295,6 +2381,7 @@ def main() -> None:
                 shap_local=shap_local,
                 graph=rdf_graph,
                 user=user,
+                panel_key="worklist",
             )
 
     with tabs[2]:
@@ -2310,6 +2397,7 @@ def main() -> None:
             shap_local=shap_local,
             graph=rdf_graph,
             user=user,
+            panel_key="queue_update",
         )
 
     with tabs[3]:
