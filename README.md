@@ -99,12 +99,12 @@ python3 -m streamlit run app/dashboard.py
 - `viewer / view123!`
 
 ## UI 모드 (Plain / Safe / Cinematic)
-일부 브라우저/GPU 환경에서 애니메이션/대형 미디어가 blank/black screen을 유발할 수 있어 기본은 **Safe 모드**입니다.
+브라우저/환경 호환성을 위해 UI는 Streamlit 기본 컴포넌트(컨테이너/컬럼/테이블)로 구성되어 있습니다.
 
 - Plain (troubleshooting): `http://127.0.0.1:8501?ui=plain`
-- Safe (default): `http://127.0.0.1:8501`
-- Cinematic: `http://127.0.0.1:8501?ui=cinematic` (alias: `?cinematic=1`)
-  - 또는: `LP_UI_MODE=cinematic make demo-local` (alias: `LP_CINEMATIC_UI=1`)
+- Safe (default): `http://127.0.0.1:8501` (Streamlit theme 기반)
+- Cinematic: `http://127.0.0.1:8501?ui=cinematic` (legacy alias: `?cinematic=1`)
+  - 기존 데모 링크 호환을 위해 유지됩니다.
 
 Blank screen 트러블슈팅:
 - `http://127.0.0.1:8501?smoke=1` (최소 렌더링 확인)
