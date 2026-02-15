@@ -785,16 +785,12 @@ def render_login_gate() -> Dict[str, object]:
     if user:
         return user
 
-    st.markdown(
-        """
-<div class="auth-box">
-  <div class="kicker">Secure Access</div>
-  <h2 style="margin-top:0">The Logistics Prophet Login</h2>
-  <p style="color:#5c554a">Role-based access is enabled. Actions are audit-tracked.</p>
-</div>
-        """,
-        unsafe_allow_html=True,
-    )
+    # Avoid relying on custom HTML/CSS for the login gate.
+    # If a user's browser blocks custom styles or scripts, standard Streamlit widgets
+    # should still render clearly.
+    st.title("The Logistics Prophet")
+    st.caption("Secure access. Role-based permissions are enabled and actions are audit-tracked.")
+    st.caption("If the page looks blank, try `?ui=plain` or run `make demo-local-debug`.")
 
     with st.form("login_form"):
         username = st.text_input("Username")
