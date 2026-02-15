@@ -348,21 +348,12 @@ def inject_css(*, cinematic: bool) -> None:
   --glass: rgba(255,255,255,0.68);
 }
 
-#MainMenu { visibility: hidden; }
-header[data-testid="stHeader"] { visibility: hidden; }
-footer { visibility: hidden; }
-
-.stApp, div[data-testid="stAppViewContainer"] {
+div[data-testid="stAppViewContainer"] {
   color: var(--ink);
   background:
     radial-gradient(1100px 500px at -5% -12%, #ddeae6 0%, transparent 60%),
     radial-gradient(900px 500px at 104% 3%, #eddcd2 0%, transparent 56%),
     linear-gradient(180deg, #f6f2ea 0%, #ece5d7 100%);
-}
-
-.stApp {
-  position: relative;
-  isolation: isolate;
 }
 
 """
@@ -375,8 +366,6 @@ footer { visibility: hidden; }
 
 .block-container {
   max-width: 1240px;
-  position: relative;
-  z-index: 1;
   padding-top: 1.2rem;
   padding-bottom: 2.5rem;
 }
