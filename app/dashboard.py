@@ -144,6 +144,35 @@ def cinematic_ui_enabled() -> bool:
     return env in {"1", "true", "yes", "on"}
 
 
+def ui_mode() -> str:
+    """
+    UI modes:
+      - plain: no custom CSS (best for troubleshooting)
+      - safe: lightweight styling (default)
+      - cinematic: heavy visuals (animated glow + hero media)
+
+    Controls:
+      - query: `?ui=plain|safe|cinematic`
+      - query: `?cinematic=1` (legacy alias for `ui=cinematic`)
+      - env: `LP_UI_MODE=plain|safe|cinematic`
+      - env: `LP_CINEMATIC_UI=1` (legacy alias)
+    """
+    qp_ui = _query_param("ui")
+    if qp_ui:
+        candidate = qp_ui.strip().lower()
+        if candidate in {"plain", "safe", "cinematic"}:
+            return candidate
+
+    if cinematic_ui_enabled():
+        return "cinematic"
+
+    env = os.getenv("LP_UI_MODE", "").strip().lower()
+    if env in {"plain", "safe", "cinematic"}:
+        return env
+
+    return "safe"
+
+
 @st.cache_data(show_spinner=False)
 def load_json(path: Path) -> Dict[str, object]:
     if not path.exists():
@@ -301,21 +330,7 @@ def inject_css(*, cinematic: bool) -> None:
 }
 """
         if cinematic
-        else """
-.stApp::before {
-  content: "";
-  position: fixed;
-  inset: -18% -12%;
-  background:
-    radial-gradient(680px 420px at 14% 20%, rgba(15,98,91,.10) 0%, transparent 62%),
-    radial-gradient(820px 480px at 92% 18%, rgba(173,94,74,.10) 0%, transparent 60%),
-    radial-gradient(720px 520px at 52% 86%, rgba(196,168,111,.08) 0%, transparent 64%);
-  filter: blur(28px) saturate(1.04);
-  opacity: 0.85;
-  pointer-events: none;
-  z-index: 0;
-}
-"""
+        else ""
     )
 
     css = (
@@ -333,7 +348,9 @@ def inject_css(*, cinematic: bool) -> None:
   --glass: rgba(255,255,255,0.68);
 }
 
-#MainMenu, header, footer { visibility: hidden; }
+#MainMenu { visibility: hidden; }
+header[data-testid="stHeader"] { visibility: hidden; }
+footer { visibility: hidden; }
 
 .stApp, div[data-testid="stAppViewContainer"] {
   color: var(--ink);
@@ -368,12 +385,27 @@ def inject_css(*, cinematic: bool) -> None:
   position: relative;
   border: 1px solid var(--line);
   border-radius: 28px;
-  background: var(--glass);
-  backdrop-filter: blur(7px);
+  background: rgba(255,255,255,.78);
   overflow: hidden;
   box-shadow: 0 30px 50px rgba(46,36,28,0.1);
   margin-bottom: 16px;
 }
+
+"""
+        + (
+            """
+@supports ((backdrop-filter: blur(7px)) or (-webkit-backdrop-filter: blur(7px))) {
+  .hero {
+    background: var(--glass);
+    backdrop-filter: blur(7px);
+    -webkit-backdrop-filter: blur(7px);
+  }
+}
+"""
+            if cinematic
+            else ""
+        )
+        + """
 
 .hero::before {
   content: "";
@@ -2357,8 +2389,10 @@ def render_admin_panel(user: Dict[str, object]) -> None:
 
 def main() -> None:
     init_service_store(SERVICE_DB_PATH)
-    cinematic = cinematic_ui_enabled()
-    inject_css(cinematic=cinematic)
+    mode = ui_mode()
+    cinematic = mode == "cinematic"
+    if mode != "plain":
+        inject_css(cinematic=cinematic)
     user = render_login_gate()
 
     metrics = load_json(METRICS_PATH)
