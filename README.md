@@ -106,6 +106,9 @@ python3 -m streamlit run app/dashboard.py
 - Cinematic: `http://127.0.0.1:8501?ui=cinematic` (alias: `?cinematic=1`)
   - 또는: `LP_UI_MODE=cinematic make demo-local` (alias: `LP_CINEMATIC_UI=1`)
 
+Blank screen 트러블슈팅:
+- `http://127.0.0.1:8501?smoke=1` (최소 렌더링 확인)
+
 ## One-command 옵션
 ```bash
 make demo-local
