@@ -1,6 +1,6 @@
 PYTHON ?= python3
 
-.PHONY: run generate marts service-init users audit quality semantic train score report monitor core-snapshot core-worklist workflow-sla incident-reco incident-reco-apply datadog replay test clean dashboard docker-build docker-up
+.PHONY: run generate marts service-init users audit quality semantic train score report monitor core-snapshot core-worklist workflow-sla incident-reco incident-reco-apply datadog replay test clean dashboard docker-build docker-up demo-local
 
 run:
 	$(PYTHON) scripts/run_pipeline.py
@@ -61,6 +61,9 @@ replay:
 
 dashboard:
 	$(PYTHON) -m streamlit run app/dashboard.py
+
+demo-local:
+	bash scripts/start_demo_local.sh
 
 docker-build:
 	docker build -t semantic-control-tower:latest .
