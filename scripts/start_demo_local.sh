@@ -6,14 +6,20 @@ cd "$ROOT_DIR"
 
 PYTHON_BIN="${PYTHON_BIN:-python3}"
 PORT="${PORT:-8501}"
+KILL_PORT="${KILL_PORT:-0}"
+LOG_LEVEL="${LOG_LEVEL:-info}"
 
 VENV_DIR="${VENV_DIR:-.venv}"
 VENV_PY="$VENV_DIR/bin/python"
 
 FORCE_PIPELINE=0
-if [[ "${1:-}" == "--force" ]]; then
-  FORCE_PIPELINE=1
-fi
+for arg in "$@"; do
+  case "$arg" in
+    --force) FORCE_PIPELINE=1 ;;
+    --kill-port) KILL_PORT=1 ;;
+    --debug) LOG_LEVEL=debug ;;
+  esac
+done
 
 echo "[demo] root: $ROOT_DIR"
 echo "[demo] python: $PYTHON_BIN"
@@ -53,7 +59,23 @@ fi
 
 export STREAMLIT_BROWSER_GATHER_USAGE_STATS=false
 
+existing_pid="$(lsof -t -nP -iTCP:"$PORT" -sTCP:LISTEN 2>/dev/null || true)"
+if [[ -n "$existing_pid" ]]; then
+  if [[ "$KILL_PORT" -eq 1 ]]; then
+    echo "[demo] port $PORT is in use (pid=$existing_pid) -> killing"
+    kill "$existing_pid" 2>/dev/null || true
+    sleep 0.2
+  else
+    echo "[demo] ERROR: port $PORT is already in use (pid=$existing_pid)"
+    echo "[demo] Fix: run with '--kill-port' or choose a different port:"
+    echo "[demo]   PORT=8502 bash scripts/start_demo_local.sh"
+    exit 1
+  fi
+fi
+
 echo "[demo] starting dashboard: http://127.0.0.1:${PORT}"
 exec "$VENV_PY" -m streamlit run app/dashboard.py \
+  --server.headless true \
   --server.address 127.0.0.1 \
-  --server.port "$PORT"
+  --server.port "$PORT" \
+  --logger.level "$LOG_LEVEL"
