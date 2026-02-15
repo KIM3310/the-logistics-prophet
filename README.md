@@ -109,6 +109,9 @@ python3 -m streamlit run app/dashboard.py
 ## One-command 옵션
 ```bash
 make demo-local
+make demo-local-kill
+make demo-local-open
+make demo-local-debug
 make run
 make dashboard
 ```
