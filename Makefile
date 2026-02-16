@@ -1,6 +1,10 @@
+VENV_PY := .venv/bin/python
 PYTHON ?= python3
+ifeq ($(wildcard $(VENV_PY)), $(VENV_PY))
+PYTHON := $(VENV_PY)
+endif
 
-.PHONY: run generate marts service-init users audit quality semantic train score report monitor core-snapshot core-worklist workflow-sla incident-reco incident-reco-apply datadog replay test clean dashboard docker-build docker-up demo-local demo-local-kill demo-local-debug
+.PHONY: run generate marts service-init users audit quality semantic train score report monitor core-snapshot core-worklist workflow-sla incident-reco incident-reco-apply datadog replay test clean dashboard docker-build docker-up demo-local demo-local-kill demo-local-debug demo-local-open
 
 run:
 	$(PYTHON) scripts/run_pipeline.py
