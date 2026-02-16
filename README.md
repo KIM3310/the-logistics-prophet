@@ -6,6 +6,9 @@
 Note: 개인 포트폴리오 프로젝트입니다. 데이터는 synthetic이며 외부 API 없이도 로컬에서 재현 가능합니다.
 Datadog 전송은 옵션이며, 키가 없으면 dry-run/파일 출력 형태로 동작합니다.
 
+## Demo video
+https://www.youtube.com/watch?v=NDZKmDZ_R-w
+
 ## 서비스 정의
 배송 지연 리스크를 **사전에 예측**하고,
 운영팀이 바로 조치할 수 있도록 **우선순위 큐와 근거(SHAP + SPARQL)** 를 제공하는 서비스.
@@ -45,6 +48,7 @@ the-logistics-prophet/
   docs/
     datadog_ingestion.md
     runbook.md
+    postmortem_template.md
   monitoring/
     datadog_dashboard.json
     monitors.yaml
@@ -62,6 +66,7 @@ the-logistics-prophet/
     export_datadog_series.py
     push_datadog.py
     replay_alert_scenario.py
+    scenario_runner.py
     manage_users.py
     verify_audit.py
     service_core_snapshot.py
@@ -76,8 +81,6 @@ the-logistics-prophet/
     modeling.py
     scoring.py
     ops_output.py
-  RUNBOOK.md
-  POSTMORTEM_TEMPLATE.md
   .github/workflows/ci.yml
   Dockerfile
   docker-compose.yml
@@ -85,7 +88,7 @@ the-logistics-prophet/
 
 ## 빠른 실행
 ```bash
-cd the-logistics-prophet-main
+cd the-logistics-prophet
 python3 -m venv .venv
 source .venv/bin/activate
 python3 -m pip install -r requirements.txt
@@ -125,8 +128,23 @@ make demo-local-kill
 make demo-local-open
 make demo-local-debug
 make run
+make scenario
 make dashboard
 ```
+
+## Scenario Runner (Report + Evidence Pack)
+리뷰어에게 “재현 가능한 결과물”을 공유하기 위해, 엔드투엔드 상태를 점검하고 산출물을 한번에 export 합니다.
+
+```bash
+make scenario
+# 또는:
+python3 scripts/scenario_runner.py --out-dir /tmp/lp-scenario
+```
+
+출력:
+- `report.md` (Executive snapshot + Worklist top actions + governance)
+- `verdict.json` (pipeline/quality/audit 결과)
+- `logistics-prophet-evidence-pack-*.zip` (SHA-256 manifest 포함)
 
 ## 주요 산출물
 - `data/model/model_artifact.json`

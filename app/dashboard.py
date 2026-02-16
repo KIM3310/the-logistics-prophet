@@ -1,12 +1,9 @@
 from __future__ import annotations
 
 import json
-import hashlib
-import io
 import os
 import subprocess
 import sys
-import zipfile
 from contextlib import contextmanager
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -23,6 +20,7 @@ if str(SRC) not in sys.path:
 
 from control_tower.config import SERVICE_DB_PATH
 from control_tower.data_access import fetch_shipment_feature_row
+from control_tower.evidence_pack import build_evidence_pack_bytes
 from control_tower.semantic_queries import load_instance_graph, query_shipment_evidence
 from control_tower.service_store import (
     allowed_next_statuses,
@@ -147,7 +145,7 @@ def ui_mode() -> str:
     UI modes:
       - plain: minimal (troubleshooting; hides non-essential visuals)
       - safe: Streamlit theme only (default)
-      - cinematic: legacy alias (currently same as safe)
+      - cinematic: safe + small CSS layer for portfolio demo atmosphere (aurora glow)
 
     Controls:
       - query: `?ui=plain|safe|cinematic`
@@ -1934,64 +1932,6 @@ def render_postmortem_export_panel(user: Dict[str, object]) -> None:
 
         with st.expander("Preview"):
             st.code(postmortem[:6000])
-
-
-def _sha256_hex(data: bytes) -> str:
-    return hashlib.sha256(data).hexdigest()
-
-
-def build_evidence_pack_bytes(*, include_instance_graph: bool = True, include_ops_report: bool = True) -> Tuple[str, bytes]:
-    now_utc = datetime.now(timezone.utc).isoformat()
-
-    paths: List[Tuple[str, Path]] = [
-        ("README.md", ROOT / "README.md"),
-        ("RUNBOOK.md", ROOT / "RUNBOOK.md"),
-        ("specs/FLAGSHIP_V3_SPEC.md", ROOT / "specs" / "FLAGSHIP_V3_SPEC.md"),
-        ("data/output/monitoring_metrics.json", METRICS_PATH),
-        ("data/output/model_comparison.json", MODEL_COMPARISON_PATH),
-        ("data/output/training_summary.json", TRAINING_PATH),
-        ("data/output/data_quality_report.json", QUALITY_PATH),
-        ("data/output/sparql_results.json", SPARQL_PATH),
-        ("data/output/shap_global_importance.csv", SHAP_GLOBAL_PATH),
-        ("data/output/shap_local_explanations.csv", SHAP_LOCAL_PATH),
-        ("data/output/daily_risk_queue.csv", ROOT / "data" / "output" / "daily_risk_queue.csv"),
-        ("data/output/pipeline_status.json", PIPELINE_STATUS_PATH),
-        ("data/output/datadog_series_payload.json", ROOT / "data" / "output" / "datadog_series_payload.json"),
-    ]
-    if include_ops_report:
-        paths.append(("data/output/ops_report.html", ROOT / "data" / "output" / "ops_report.html"))
-    if include_instance_graph:
-        paths.append(("data/semantic/instance_graph.ttl", RDF_INSTANCE_PATH))
-
-    audit = verify_audit_chain(path=SERVICE_DB_PATH, limit=10000)
-    manifest = {
-        "generated_at_utc": now_utc,
-        "project": "the-logistics-prophet",
-        "audit_verification": audit,
-        "files": [],
-    }
-
-    buf = io.BytesIO()
-    with zipfile.ZipFile(buf, mode="w", compression=zipfile.ZIP_DEFLATED) as zf:
-        for arcname, path in paths:
-            if not path.exists():
-                continue
-            data = path.read_bytes()
-            zf.writestr(arcname, data)
-            manifest["files"].append(
-                {
-                    "path": arcname,
-                    "size_bytes": len(data),
-                    "sha256": _sha256_hex(data),
-                    "mtime_epoch": int(path.stat().st_mtime),
-                }
-            )
-
-        manifest_bytes = json.dumps(manifest, ensure_ascii=True, indent=2).encode("utf-8")
-        zf.writestr("evidence/manifest.json", manifest_bytes)
-
-    filename = f"logistics-prophet-evidence-pack-{datetime.now(timezone.utc).strftime('%Y%m%d-%H%M%S')}.zip"
-    return filename, buf.getvalue()
 
 
 def render_evidence_pack_panel(user: Dict[str, object]) -> None:
