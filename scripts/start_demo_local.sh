@@ -67,8 +67,41 @@ existing_pid="$(lsof -t -nP -iTCP:"$PORT" -sTCP:LISTEN 2>/dev/null || true)"
 if [[ -n "$existing_pid" ]]; then
   if [[ "$KILL_PORT" -eq 1 ]]; then
     echo "[demo] port $PORT is in use (pid=$existing_pid) -> killing"
-    kill "$existing_pid" 2>/dev/null || true
-    sleep 0.2
+    # NOTE: lsof may return multiple PIDs (one per line). Intentionally unquoted.
+    kill $existing_pid 2>/dev/null || true
+
+    # Give the OS a moment to release the socket.
+    released=0
+    for _i in 1 2 3 4 5 6 7 8 9 10; do
+      pid_check="$(lsof -t -nP -iTCP:"$PORT" -sTCP:LISTEN 2>/dev/null || true)"
+      if [[ -z "$pid_check" ]]; then
+        released=1
+        break
+      fi
+      sleep 0.2
+    done
+    if [[ "$released" -ne 1 ]]; then
+      if [[ "$AUTO_PORT" -eq 1 ]]; then
+        start_port="$PORT"
+        found=0
+        for p in $(seq "$start_port" $((start_port + 20))); do
+          pid="$(lsof -t -nP -iTCP:"$p" -sTCP:LISTEN 2>/dev/null || true)"
+          if [[ -z "$pid" ]]; then
+            PORT="$p"
+            found=1
+            break
+          fi
+        done
+        if [[ "$found" -eq 0 ]]; then
+          echo "[demo] ERROR: port $start_port still busy and no free port found nearby"
+          exit 1
+        fi
+        echo "[demo] port $start_port still busy -> using free port $PORT"
+      else
+        echo "[demo] ERROR: port $PORT is still in use after kill attempt"
+        exit 1
+      fi
+    fi
   else
     if [[ "$AUTO_PORT" -eq 1 ]]; then
       start_port="$PORT"
