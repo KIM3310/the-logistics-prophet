@@ -104,10 +104,19 @@ python3 -m streamlit run app/dashboard.py
 - Plain (troubleshooting): `http://127.0.0.1:8501?ui=plain`
 - Safe (default): `http://127.0.0.1:8501` (Streamlit theme 기반)
 - Cinematic: `http://127.0.0.1:8501?ui=cinematic` (legacy alias: `?cinematic=1`)
-  - 기존 데모 링크 호환을 위해 유지됩니다.
+  - 포트폴리오 데모용으로 **은은한 빛(aurora) 분위기 CSS**가 적용됩니다(`app/assets/cinematic.css`).
 
 Blank screen 트러블슈팅:
 - `http://127.0.0.1:8501?smoke=1` (최소 렌더링 확인)
+- `http://127.0.0.1:8501?ui=plain` (시각 요소 최소화)
+
+## 빠른 네비게이션 (Deep link)
+- `?page=control-tower`
+- `?page=worklist`
+- `?page=queue-update`
+- `?page=incidents`
+- `?page=insights`
+- `?page=governance`
 
 ## One-command 옵션
 ```bash

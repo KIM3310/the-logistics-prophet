@@ -1,0 +1,110 @@
+/* Cinematic UI (optional)
+   Enabled via: ?ui=cinematic or LP_UI_MODE=cinematic
+
+   Design goals:
+   - "Subtle light" atmosphere: warm paper + aurora glow.
+   - Keep text highly readable and avoid layout-breaking overrides.
+   - Only style safe targets (Streamlit testids) so upgrades are less risky.
+*/
+
+:root {
+  --lp-ink: #15130f;
+  --lp-muted: rgba(21, 19, 15, 0.62);
+  --lp-border: rgba(21, 19, 15, 0.10);
+  --lp-primary: #0f625b;
+  --lp-accent: #c97a4c;
+  --lp-surface: rgba(255, 255, 255, 0.70);
+  --lp-surface-strong: rgba(255, 255, 255, 0.92);
+  --lp-shadow: 0 14px 40px rgba(21, 19, 15, 0.12);
+}
+
+html,
+body {
+  color: var(--lp-ink);
+  background: #f6f2ea;
+}
+
+/* App background with a soft aurora glow. */
+div[data-testid="stAppViewContainer"] {
+  background:
+    radial-gradient(900px 520px at 22% 6%, rgba(15, 98, 91, 0.10), rgba(15, 98, 91, 0) 60%),
+    radial-gradient(820px 520px at 86% 18%, rgba(201, 122, 76, 0.12), rgba(201, 122, 76, 0) 62%),
+    radial-gradient(720px 520px at 50% 96%, rgba(109, 155, 208, 0.10), rgba(109, 155, 208, 0) 62%),
+    linear-gradient(180deg, #f7f3ec 0%, #f4efe6 60%, #f7f3ec 100%);
+}
+
+div[data-testid="stAppViewContainer"]::before {
+  content: "";
+  position: fixed;
+  inset: -20%;
+  pointer-events: none;
+  background:
+    radial-gradient(540px 360px at 28% 10%, rgba(15, 98, 91, 0.16), rgba(15, 98, 91, 0) 62%),
+    radial-gradient(520px 360px at 80% 18%, rgba(201, 122, 76, 0.15), rgba(201, 122, 76, 0) 62%);
+  filter: blur(26px);
+  opacity: 0.65;
+  animation: lpGlow 14s ease-in-out infinite;
+}
+
+@keyframes lpGlow {
+  0% { transform: translate3d(0, 0, 0) scale(1); }
+  50% { transform: translate3d(-1.5%, 0.8%, 0) scale(1.02); }
+  100% { transform: translate3d(0, 0, 0) scale(1); }
+}
+
+/* Slightly narrower content for a more intentional layout. */
+div[data-testid="stMainBlockContainer"] {
+  max-width: 1280px;
+  padding-top: 1.25rem;
+  padding-bottom: 3rem;
+}
+
+/* Border containers -> glassy cards. */
+div[data-testid="stVerticalBlockBorderWrapper"] {
+  background: var(--lp-surface);
+  border: 1px solid var(--lp-border);
+  border-radius: 16px;
+  box-shadow: var(--lp-shadow);
+  backdrop-filter: blur(12px);
+}
+
+/* Make headings feel slightly more editorial without relying on external fonts. */
+h1, h2, h3 {
+  letter-spacing: -0.012em;
+}
+
+/* Buttons */
+.stButton > button {
+  border-radius: 12px !important;
+  border: 1px solid rgba(21, 19, 15, 0.12) !important;
+  background: rgba(255, 255, 255, 0.75) !important;
+  color: var(--lp-ink) !important;
+  box-shadow: 0 10px 22px rgba(21, 19, 15, 0.10);
+}
+
+.stButton > button:hover {
+  border-color: rgba(15, 98, 91, 0.35) !important;
+  box-shadow: 0 14px 28px rgba(15, 98, 91, 0.14);
+}
+
+.stButton > button:focus-visible {
+  outline: 3px solid rgba(15, 98, 91, 0.25) !important;
+  outline-offset: 2px;
+}
+
+/* Inputs */
+div[data-baseweb="input"] > div,
+div[data-baseweb="textarea"] > div {
+  border-radius: 12px;
+  border-color: rgba(21, 19, 15, 0.16) !important;
+  background: var(--lp-surface-strong) !important;
+}
+
+/* Captions */
+small, .stCaption, div[data-testid="stCaptionContainer"] {
+  color: var(--lp-muted) !important;
+}
+
+/* Hide "Made with Streamlit" footer if present (still accessible via View Source). */
+footer { visibility: hidden; height: 0; }
+

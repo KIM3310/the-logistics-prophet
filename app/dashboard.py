@@ -171,6 +171,62 @@ def ui_mode() -> str:
     return "safe"
 
 
+def apply_cinematic_css_if_enabled(mode: str) -> None:
+    if mode != "cinematic":
+        return
+    css_path = ASSET_DIR / "cinematic.css"
+    if not css_path.exists():
+        return
+    try:
+        css = css_path.read_text(encoding="utf-8")
+    except OSError:
+        return
+    # Cinematic mode intentionally uses a small amount of CSS for atmosphere.
+    # Safe/plain modes avoid custom CSS to maximize browser compatibility.
+    st.markdown(f"<style>{css}</style>", unsafe_allow_html=True)
+
+
+def render_nav(mode: str) -> str:
+    pages = [
+        "Control Tower",
+        "Worklist",
+        "Queue + Update",
+        "Incidents",
+        "Insights",
+        "Governance",
+    ]
+    default = (_query_param("page") or "").strip().lower().replace("_", "-")
+    default_map = {
+        "control": "Control Tower",
+        "control-tower": "Control Tower",
+        "tower": "Control Tower",
+        "worklist": "Worklist",
+        "queue": "Queue + Update",
+        "queue-update": "Queue + Update",
+        "incidents": "Incidents",
+        "insights": "Insights",
+        "governance": "Governance",
+    }
+    default_label = default_map.get(default, "Control Tower")
+    try:
+        default_index = pages.index(default_label)
+    except ValueError:
+        default_index = 0
+
+    st.caption("Navigate")
+    page = st.radio(
+        "Navigate",
+        options=pages,
+        index=default_index,
+        horizontal=True,
+        key="lp_nav_main",
+        label_visibility="collapsed",
+    )
+    if mode == "plain":
+        st.caption("Plain mode is enabled (`?ui=plain`). Visual polish is reduced for troubleshooting.")
+    return str(page)
+
+
 @st.cache_data(show_spinner=False)
 def load_json(path: Path) -> Dict[str, object]:
     if not path.exists():
@@ -2038,7 +2094,7 @@ def render_admin_panel(user: Dict[str, object]) -> None:
 def main() -> None:
     init_service_store(SERVICE_DB_PATH)
     mode = ui_mode()
-    cinematic = mode == "cinematic"
+    apply_cinematic_css_if_enabled(mode)
 
     # Fast way to isolate "blank page" problems (browser/JS/websocket/etc).
     # If this doesn't render, the issue is almost certainly on the client side.
@@ -2046,7 +2102,7 @@ def main() -> None:
     if smoke in {"1", "true", "yes", "on"}:
         st.title("Smoke Test")
         st.write("If you can read this, the Streamlit frontend is running.")
-        st.write({"ui_mode": mode, "cinematic": cinematic})
+        st.write({"ui_mode": mode})
         st.stop()
 
     # Reliability-first: no global CSS injection. The UI is built with Streamlit primitives
@@ -2054,23 +2110,8 @@ def main() -> None:
 
     user = render_login_gate()
 
-    metrics = load_json(METRICS_PATH)
-    quality = load_json(QUALITY_PATH)
-    sparql = load_json(SPARQL_PATH)
-    shap_global = load_shap_global(SHAP_GLOBAL_PATH)
-    model_comparison = load_json(MODEL_COMPARISON_PATH)
-    training = load_json(TRAINING_PATH)
     pipeline_status = load_json(PIPELINE_STATUS_PATH)
-    kpi_series = load_kpi_series()
-    queue = load_service_queue()
-    service_summary = fetch_queue_summary(SERVICE_DB_PATH)
-    ops_health = fetch_ops_health(SERVICE_DB_PATH)
-    core_snapshot = fetch_service_core_snapshot(SERVICE_DB_PATH)
-    core_worklist = fetch_service_core_worklist(SERVICE_DB_PATH, per_stage_limit=6)
-    workflow_sla = fetch_workflow_sla_snapshot(SERVICE_DB_PATH)
-    shap_local = load_shap_local(SHAP_LOCAL_PATH)
-    rdf_graph = load_rdf_graph(str(RDF_INSTANCE_PATH))
-
+    metrics = load_json(METRICS_PATH)
     if not metrics:
         st.error("Pipeline output not found. Run the pipeline first.")
         if str(user.get("role", "viewer")) == "admin":
@@ -2093,18 +2134,17 @@ def main() -> None:
         return
 
     render_session_bar(user, pipeline_status=pipeline_status, metrics=metrics)
-    tabs = st.tabs(
-        [
-            "Control Tower",
-            "Worklist",
-            "Queue + Update",
-            "Incidents",
-            "Insights",
-            "Governance",
-        ]
-    )
+    page = render_nav(mode)
 
-    with tabs[0]:
+    if page == "Control Tower":
+        quality = load_json(QUALITY_PATH)
+        training = load_json(TRAINING_PATH)
+        queue = load_service_queue()
+        service_summary = fetch_queue_summary(SERVICE_DB_PATH)
+        ops_health = fetch_ops_health(SERVICE_DB_PATH)
+        core_snapshot = fetch_service_core_snapshot(SERVICE_DB_PATH)
+        workflow_sla = fetch_workflow_sla_snapshot(SERVICE_DB_PATH)
+
         render_hero(
             metrics,
             training,
@@ -2138,8 +2178,15 @@ def main() -> None:
             render_workflow_sla_panel(workflow_sla)
         with c2:
             render_ops_health_panel(service_summary, ops_health)
+        return
 
-    with tabs[1]:
+    if page == "Worklist":
+        queue = load_service_queue()
+        core_worklist = fetch_service_core_worklist(SERVICE_DB_PATH, per_stage_limit=6)
+        shap_local = load_shap_local(SHAP_LOCAL_PATH)
+        with st.spinner("Loading semantic graph (RDF)..."):
+            rdf_graph = load_rdf_graph(str(RDF_INSTANCE_PATH))
+
         left, right = st.columns([1.35, 1])
         with left:
             render_service_core_worklist(core_worklist, user=user, queue=queue)
@@ -2152,8 +2199,14 @@ def main() -> None:
                 user=user,
                 panel_key="worklist",
             )
+        return
 
-    with tabs[2]:
+    if page == "Queue + Update":
+        queue = load_service_queue()
+        shap_local = load_shap_local(SHAP_LOCAL_PATH)
+        with st.spinner("Loading semantic graph (RDF)..."):
+            rdf_graph = load_rdf_graph(str(RDF_INSTANCE_PATH))
+
         left, right = st.columns([1.55, 1])
         with left:
             filtered = render_queue_panel(queue)
@@ -2168,12 +2221,21 @@ def main() -> None:
             user=user,
             panel_key="queue_update",
         )
+        return
 
-    with tabs[3]:
+    if page == "Incidents":
         render_incident_console(user)
         render_postmortem_export_panel(user)
+        return
 
-    with tabs[4]:
+    if page == "Insights":
+        quality = load_json(QUALITY_PATH)
+        sparql = load_json(SPARQL_PATH)
+        shap_global = load_shap_global(SHAP_GLOBAL_PATH)
+        model_comparison = load_json(MODEL_COMPARISON_PATH)
+        training = load_json(TRAINING_PATH)
+        kpi_series = load_kpi_series()
+
         render_analysis_panel(kpi_series, shap_global, quality)
         left, right = st.columns([1.1, 1])
         with left:
@@ -2181,11 +2243,12 @@ def main() -> None:
             render_quality_details_panel(quality)
         with right:
             render_semantic_panel(sparql)
+        return
 
-    with tabs[5]:
-        render_evidence_pack_panel(user)
-        render_governance_overview_panel()
-        render_admin_panel(user)
+    # Governance
+    render_evidence_pack_panel(user)
+    render_governance_overview_panel()
+    render_admin_panel(user)
 
 
 if __name__ == "__main__":
