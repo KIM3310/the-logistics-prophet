@@ -210,3 +210,10 @@ python3 -m unittest discover -s tests -p 'test_*.py'
 3. Datadog dry-run 및 replay 시나리오 시연
 4. Runbook 기반 운영 절차 설명
 5. Governance 탭에서 Evidence Pack / Postmortem Export 시연
+
+## Glossary (first-time readers)
+- PSI: Population Stability Index (drift signal)
+- SHAP: SHapley Additive exPlanations (explainability)
+- RDF: Resource Description Framework (semantic graph)
+- SPARQL: query language for RDF graphs
+- RBAC: Role-Based Access Control
