@@ -23,6 +23,9 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
+      - name: Dependency check
+        run: python -m pip check
+
       - name: Compile
         run: |
           python -m py_compile app/dashboard.py
