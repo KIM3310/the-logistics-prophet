@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import importlib.util
 import json
+import os
 import tempfile
 import unittest
 from pathlib import Path
@@ -65,6 +66,26 @@ class TestPipelineLock(unittest.TestCase):
         with self.assertRaises(RuntimeError):
             self.pipeline._acquire_lock(timeout_sec=0.2, poll_sec=0.05, stale_sec=0.1)
         self.pipeline._release_lock(token)
+
+    def test_env_float_parsing_is_resilient(self) -> None:
+        old_timeout = os.environ.get("PIPELINE_LOCK_TIMEOUT_SEC")
+        old_stale = os.environ.get("PIPELINE_LOCK_STALE_SEC")
+        try:
+            os.environ["PIPELINE_LOCK_TIMEOUT_SEC"] = "not-a-number"
+            os.environ["PIPELINE_LOCK_STALE_SEC"] = "-999"
+            token = self.pipeline._acquire_lock(timeout_sec=None, poll_sec=0.05, stale_sec=None)
+            self.assertTrue(self.lock_path.exists())
+            self.pipeline._release_lock(token)
+            self.assertFalse(self.lock_path.exists())
+        finally:
+            if old_timeout is None:
+                os.environ.pop("PIPELINE_LOCK_TIMEOUT_SEC", None)
+            else:
+                os.environ["PIPELINE_LOCK_TIMEOUT_SEC"] = old_timeout
+            if old_stale is None:
+                os.environ.pop("PIPELINE_LOCK_STALE_SEC", None)
+            else:
+                os.environ["PIPELINE_LOCK_STALE_SEC"] = old_stale
 
 
 if __name__ == "__main__":

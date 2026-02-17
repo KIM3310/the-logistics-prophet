@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import math
 import os
 import subprocess
 import sys
@@ -107,9 +108,9 @@ def _should_reclaim_lock(payload: dict[str, Any], stale_sec: float) -> bool:
 
 def _acquire_lock(timeout_sec: float | None = None, poll_sec: float = 0.4, stale_sec: float | None = None) -> str:
     if timeout_sec is None:
-        timeout_sec = float(os.getenv("PIPELINE_LOCK_TIMEOUT_SEC", "60"))
+        timeout_sec = _read_env_float("PIPELINE_LOCK_TIMEOUT_SEC", default=60.0, minimum=0.1)
     if stale_sec is None:
-        stale_sec = float(os.getenv("PIPELINE_LOCK_STALE_SEC", "900"))
+        stale_sec = _read_env_float("PIPELINE_LOCK_STALE_SEC", default=900.0, minimum=1.0)
     PIPELINE_LOCK.parent.mkdir(parents=True, exist_ok=True)
     started = time.time()
     lock_token = f"{os.getpid()}-{int(time.time() * 1000)}"
@@ -146,6 +147,19 @@ def _release_lock(lock_token: str) -> None:
                 PIPELINE_LOCK.unlink()
             except FileNotFoundError:
                 pass
+
+
+def _read_env_float(name: str, *, default: float, minimum: float) -> float:
+    raw = (os.getenv(name) or "").strip()
+    if not raw:
+        return max(minimum, default)
+    try:
+        value = float(raw)
+    except ValueError:
+        return max(minimum, default)
+    if not math.isfinite(value):
+        return max(minimum, default)
+    return max(minimum, value)
 
 
 def main() -> None:
