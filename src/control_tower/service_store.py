@@ -180,6 +180,17 @@ def _hash_payload(payload: Dict[str, object], prev_hash: str) -> str:
     return digest
 
 
+def _parse_activity_json_field(raw: object) -> Dict[str, object]:
+    text = str(raw or "{}")
+    try:
+        parsed = json.loads(text)
+    except json.JSONDecodeError as exc:
+        raise ValueError("invalid_json") from exc
+    if not isinstance(parsed, dict):
+        raise ValueError("json_object_required")
+    return parsed
+
+
 def _hash_password(password: str, salt_hex: str | None = None) -> Tuple[str, str]:
     if salt_hex is None:
         salt_hex = secrets.token_hex(16)
@@ -601,15 +612,29 @@ def verify_audit_chain(path: Path = SERVICE_DB_PATH, limit: int = 5000) -> Dict[
             skipped_legacy += 1
             continue
 
+        try:
+            payload_json = _parse_activity_json_field(row["payload_json"])
+            previous_state_json = _parse_activity_json_field(row["previous_state_json"])
+            new_state_json = _parse_activity_json_field(row["new_state_json"])
+        except ValueError:
+            return {
+                "valid": False,
+                "checked": checked,
+                "skipped_legacy": skipped_legacy,
+                "failed_id": int(row["id"]),
+                "reason": "invalid_payload_json",
+                "latest_hash": prev_hash,
+            }
+
         payload = {
             "actor": row["actor"],
             "actor_role": row["actor_role"],
             "action": row["action"],
             "entity_type": row["entity_type"],
             "entity_id": row["entity_id"],
-            "payload": json.loads(row["payload_json"] or "{}"),
-            "previous_state": json.loads(row["previous_state_json"] or "{}"),
-            "new_state": json.loads(row["new_state_json"] or "{}"),
+            "payload": payload_json,
+            "previous_state": previous_state_json,
+            "new_state": new_state_json,
             "reason": row["reason"],
             "request_id": row["request_id"],
             "created_at": row["created_at"],
