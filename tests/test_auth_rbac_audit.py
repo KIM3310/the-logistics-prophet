@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+import sqlite3
 import subprocess
 import sys
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -14,6 +16,7 @@ from control_tower.config import SERVICE_DB_PATH
 from control_tower.service_store import (
     authenticate_user,
     fetch_queue,
+    init_service_store,
     update_queue_action,
     verify_audit_chain,
 )
@@ -64,6 +67,31 @@ class TestAuthRbacAudit(unittest.TestCase):
         result = verify_audit_chain(path=SERVICE_DB_PATH)
         self.assertTrue(result.get("valid"), f"Audit chain invalid: {result}")
         self.assertGreaterEqual(int(result.get("checked", 0)), 1)
+
+    def test_audit_chain_reports_invalid_json_payload(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="logistics_audit_chain_") as tmp:
+            db_path = Path(tmp) / "service.db"
+            init_service_store(path=db_path)
+            admin = authenticate_user("admin", "admin123!", path=db_path)
+            self.assertIsNotNone(admin)
+
+            conn = sqlite3.connect(db_path)
+            try:
+                conn.execute(
+                    """
+                    UPDATE service_activity_log
+                    SET payload_json = ?
+                    WHERE id = (SELECT MAX(id) FROM service_activity_log)
+                    """,
+                    ("{bad-json",),
+                )
+                conn.commit()
+            finally:
+                conn.close()
+
+            result = verify_audit_chain(path=db_path)
+            self.assertFalse(result.get("valid"))
+            self.assertEqual(result.get("reason"), "invalid_payload_json")
 
 
 if __name__ == "__main__":
