@@ -229,14 +229,23 @@ def render_nav(mode: str) -> str:
 def load_json(path: Path) -> Dict[str, object]:
     if not path.exists():
         return {}
-    with path.open("r", encoding="utf-8") as f:
-        return json.load(f)
+    try:
+        with path.open("r", encoding="utf-8") as f:
+            payload = json.load(f)
+    except (OSError, json.JSONDecodeError):
+        return {}
+    if not isinstance(payload, dict):
+        return {}
+    return payload
 
 @st.cache_data(show_spinner=False)
 def load_shap_global(path: Path) -> pd.DataFrame:
     if not path.exists():
         return pd.DataFrame(columns=["feature", "mean_abs_contribution"])
-    frame = pd.read_csv(path)
+    try:
+        frame = pd.read_csv(path)
+    except (OSError, pd.errors.ParserError):
+        return pd.DataFrame(columns=["feature", "mean_abs_contribution"])
     if "mean_abs_contribution" in frame.columns:
         frame["mean_abs_contribution"] = pd.to_numeric(frame["mean_abs_contribution"], errors="coerce").fillna(0.0)
     return frame.sort_values("mean_abs_contribution", ascending=False)
@@ -257,7 +266,21 @@ def load_shap_local(path: Path) -> pd.DataFrame:
                 "contribution_3",
             ]
         )
-    frame = pd.read_csv(path)
+    try:
+        frame = pd.read_csv(path)
+    except (OSError, pd.errors.ParserError):
+        return pd.DataFrame(
+            columns=[
+                "shipment_id",
+                "risk_score",
+                "feature_1",
+                "contribution_1",
+                "feature_2",
+                "contribution_2",
+                "feature_3",
+                "contribution_3",
+            ]
+        )
     for col in ["risk_score", "contribution_1", "contribution_2", "contribution_3"]:
         if col in frame.columns:
             frame[col] = pd.to_numeric(frame[col], errors="coerce").fillna(0.0)
