@@ -11,7 +11,9 @@ from typing import Dict, List, Optional, Tuple
 
 import pandas as pd
 import plotly.graph_objects as go
+import requests
 import streamlit as st
+import streamlit.components.v1 as components
 
 ROOT = Path(__file__).resolve().parents[1]
 SRC = ROOT / "src"
@@ -2016,6 +2018,142 @@ def render_governance_overview_panel() -> None:
             st.caption("No recent activity.")
 
 
+def render_community_hub_panel(user: Dict[str, object]) -> None:
+    with panel("Community Hub", caption="Optional integrations: Formspree + Disqus + Giscus"):
+        endpoint = str(os.getenv("LP_FORMSPREE_ENDPOINT", "")).strip()
+        disqus_shortname = str(os.getenv("LP_DISQUS_SHORTNAME", "")).strip()
+        disqus_identifier = str(os.getenv("LP_DISQUS_IDENTIFIER", "the-logistics-prophet-governance")).strip()
+        page_url = str(
+            os.getenv("LP_COMMUNITY_PAGE_URL", "https://github.com/KIM3310/the-logistics-prophet")
+        ).strip()
+        giscus_repo = str(os.getenv("LP_GISCUS_REPO", "")).strip()
+        giscus_repo_id = str(os.getenv("LP_GISCUS_REPO_ID", "")).strip()
+        giscus_category = str(os.getenv("LP_GISCUS_CATEGORY", "")).strip()
+        giscus_category_id = str(os.getenv("LP_GISCUS_CATEGORY_ID", "")).strip()
+        giscus_mapping = str(os.getenv("LP_GISCUS_MAPPING", "specific")).strip() or "specific"
+        giscus_term = str(os.getenv("LP_GISCUS_TERM", disqus_identifier)).strip() or disqus_identifier
+
+        with st.form("lp_community_feedback_form", clear_on_submit=True):
+            c1, c2 = st.columns(2)
+            with c1:
+                name = st.text_input(
+                    "Name",
+                    value=str(user.get("display_name") or user.get("username") or "").strip(),
+                    max_chars=80,
+                )
+            with c2:
+                email = st.text_input("Email", value="", max_chars=120)
+            message = st.text_area(
+                "Feedback",
+                value="",
+                height=100,
+                max_chars=1500,
+                placeholder="Share feature requests, ops pain points, or incident workflow feedback.",
+            )
+            submitted = st.form_submit_button("Send via Formspree")
+
+        if submitted:
+            if not endpoint:
+                st.error("Set `LP_FORMSPREE_ENDPOINT` to enable feedback submission.")
+            else:
+                clean_message = message.strip()
+                if not clean_message:
+                    st.error("Feedback message is required.")
+                else:
+                    payload = {
+                        "name": name.strip(),
+                        "email": email.strip(),
+                        "message": clean_message,
+                        "source": "the-logistics-prophet-streamlit",
+                        "actor_username": str(user.get("username") or "").strip(),
+                        "actor_role": str(user.get("role") or "").strip(),
+                        "page": "governance",
+                    }
+                    try:
+                        resp = requests.post(
+                            endpoint,
+                            json=payload,
+                            headers={"Accept": "application/json"},
+                            timeout=10,
+                        )
+                        response_payload: Dict[str, object] = {}
+                        try:
+                            parsed = resp.json()
+                            if isinstance(parsed, dict):
+                                response_payload = parsed
+                        except ValueError:
+                            response_payload = {}
+
+                        if resp.status_code >= 400:
+                            detail = str(response_payload.get("error") or "request failed")
+                            errors = response_payload.get("errors")
+                            if isinstance(errors, list) and errors:
+                                first = errors[0]
+                                if isinstance(first, dict) and first.get("message"):
+                                    detail = str(first["message"])
+                            st.error(f"Formspree rejected feedback: {detail}")
+                        else:
+                            st.success("Feedback sent.")
+                    except requests.RequestException as exc:
+                        st.error(f"Formspree request failed: {exc}")
+
+        left, right = st.columns(2)
+        with left:
+            st.caption("Disqus Thread")
+            if disqus_shortname:
+                disqus_html = f"""
+                <div id="disqus_thread"></div>
+                <script>
+                var disqus_config = function () {{
+                  this.page.url = {json.dumps(page_url)};
+                  this.page.identifier = {json.dumps(disqus_identifier)};
+                }};
+                (function() {{
+                  var d = document, s = d.createElement('script');
+                  s.src = 'https://' + {json.dumps(disqus_shortname)} + '.disqus.com/embed.js';
+                  s.setAttribute('data-timestamp', +new Date());
+                  (d.head || d.body).appendChild(s);
+                }})();
+                </script>
+                """
+                components.html(disqus_html, height=420, scrolling=True)
+            else:
+                st.info("Set `LP_DISQUS_SHORTNAME` to enable Disqus.")
+
+        with right:
+            st.caption("Giscus (GitHub Discussions)")
+            required = [giscus_repo, giscus_repo_id, giscus_category, giscus_category_id]
+            if all(required):
+                giscus_html = f"""
+                <div id="giscus_mount"></div>
+                <script>
+                const s = document.createElement('script');
+                s.src = 'https://giscus.app/client.js';
+                s.async = true;
+                s.crossOrigin = 'anonymous';
+                s.setAttribute('data-repo', {json.dumps(giscus_repo)});
+                s.setAttribute('data-repo-id', {json.dumps(giscus_repo_id)});
+                s.setAttribute('data-category', {json.dumps(giscus_category)});
+                s.setAttribute('data-category-id', {json.dumps(giscus_category_id)});
+                s.setAttribute('data-mapping', {json.dumps(giscus_mapping)});
+                s.setAttribute('data-term', {json.dumps(giscus_term)});
+                s.setAttribute('data-strict', '0');
+                s.setAttribute('data-reactions-enabled', '1');
+                s.setAttribute('data-emit-metadata', '0');
+                s.setAttribute('data-input-position', 'top');
+                s.setAttribute('data-theme', 'light');
+                s.setAttribute('data-lang', 'en');
+                document.getElementById('giscus_mount').appendChild(s);
+                </script>
+                """
+                components.html(giscus_html, height=430, scrolling=True)
+            else:
+                st.info(
+                    "Set `LP_GISCUS_REPO`, `LP_GISCUS_REPO_ID`, `LP_GISCUS_CATEGORY`, "
+                    "and `LP_GISCUS_CATEGORY_ID` to enable Giscus."
+                )
+
+
 def render_admin_panel(user: Dict[str, object]) -> None:
     if not has_permission(str(user.get("role", "viewer")), "user_manage"):
         return
@@ -2209,6 +2347,7 @@ def main() -> None:
         return
 
     # Governance
+    render_community_hub_panel(user)
     render_evidence_pack_panel(user)
     render_governance_overview_panel()
     render_admin_panel(user)
