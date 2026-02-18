@@ -79,6 +79,14 @@ def utc_now_iso() -> str:
     return datetime.now(timezone.utc).isoformat()
 
 
+def _safe_positive_int(value: object, default: int, *, min_value: int = 1, max_value: int = 10_000) -> int:
+    try:
+        parsed = int(value)  # type: ignore[arg-type]
+    except (TypeError, ValueError):
+        parsed = int(default)
+    return max(min_value, min(parsed, max_value))
+
+
 def _parse_iso_datetime(value: str | None) -> datetime | None:
     if not value:
         return None
@@ -582,6 +590,7 @@ def _append_activity(
 
 def verify_audit_chain(path: Path = SERVICE_DB_PATH, limit: int = 5000) -> Dict[str, object]:
     init_service_store(path)
+    safe_limit = _safe_positive_int(limit, 5000, min_value=1, max_value=50_000)
     conn = sqlite3.connect(path)
     conn.row_factory = sqlite3.Row
     try:
@@ -594,7 +603,7 @@ def verify_audit_chain(path: Path = SERVICE_DB_PATH, limit: int = 5000) -> Dict[
             ORDER BY id ASC
             LIMIT ?
             """,
-            (limit,),
+            (safe_limit,),
         ).fetchall()
     finally:
         conn.close()
@@ -755,6 +764,7 @@ def fetch_queue(
     limit: int = 500,
 ) -> List[Dict[str, object]]:
     init_service_store(path)
+    safe_limit = _safe_positive_int(limit, 500, min_value=1, max_value=10_000)
 
     where = []
     params: List[object] = []
@@ -774,7 +784,7 @@ def fetch_queue(
         "recommended_action, status, owner, note, eta_action_at, created_at, updated_at "
         f"FROM service_queue {where_sql} ORDER BY risk_score DESC LIMIT ?"
     )
-    params.append(limit)
+    params.append(safe_limit)
 
     conn = sqlite3.connect(path)
     conn.row_factory = sqlite3.Row
@@ -815,6 +825,7 @@ def fetch_queue_summary(path: Path = SERVICE_DB_PATH) -> Dict[str, object]:
 
 
 def fetch_ops_health(path: Path = SERVICE_DB_PATH, owner_limit: int = 8) -> Dict[str, object]:
+    safe_owner_limit = _safe_positive_int(owner_limit, 8, min_value=1, max_value=50)
     rows = fetch_queue(path=path, limit=10_000)
     now = datetime.now(timezone.utc)
 
@@ -857,11 +868,12 @@ def fetch_ops_health(path: Path = SERVICE_DB_PATH, owner_limit: int = 8) -> Dict
         "stale_24h": int(stale_24h),
         "critical_unassigned": int(critical_unassigned),
         "avg_unresolved_age_hours": avg_age,
-        "owner_backlog": [{"owner": owner, "count": int(cnt)} for owner, cnt in owner_backlog.most_common(owner_limit)],
+        "owner_backlog": [{"owner": owner, "count": int(cnt)} for owner, cnt in owner_backlog.most_common(safe_owner_limit)],
     }
 
 
 def fetch_service_core_snapshot(path: Path = SERVICE_DB_PATH, candidate_limit: int = 12) -> Dict[str, object]:
+    safe_candidate_limit = _safe_positive_int(candidate_limit, 12, min_value=1, max_value=200)
     rows = fetch_queue(path=path, limit=10_000)
     now = datetime.now(timezone.utc)
 
@@ -954,12 +966,13 @@ def fetch_service_core_snapshot(path: Path = SERVICE_DB_PATH, candidate_limit: i
         "queue_size": queue_size,
         "unresolved": unresolved,
         "stage_backlog": stage_backlog,
-        "escalation_candidates": escalation_candidates[:candidate_limit],
+        "escalation_candidates": escalation_candidates[:safe_candidate_limit],
         "driver_hotspots": driver_hotspots,
     }
 
 
 def fetch_workflow_sla_snapshot(path: Path = SERVICE_DB_PATH, candidate_limit: int = 12) -> Dict[str, object]:
+    safe_candidate_limit = _safe_positive_int(candidate_limit, 12, min_value=1, max_value=200)
     rows = fetch_queue(path=path, limit=10_000)
     now = datetime.now(timezone.utc)
     thresholds = {
@@ -1044,7 +1057,7 @@ def fetch_workflow_sla_snapshot(path: Path = SERVICE_DB_PATH, candidate_limit: i
             }
             for item in stage_counters.values()
         ],
-        "breached_candidates": breached_candidates[:candidate_limit],
+        "breached_candidates": breached_candidates[:safe_candidate_limit],
     }
 
 
@@ -1063,6 +1076,7 @@ def _next_step_hint(status: str, no_owner: bool, overdue_eta: bool) -> str:
 
 
 def fetch_service_core_worklist(path: Path = SERVICE_DB_PATH, per_stage_limit: int = 6) -> Dict[str, object]:
+    safe_per_stage_limit = _safe_positive_int(per_stage_limit, 6, min_value=1, max_value=100)
     rows = fetch_queue(path=path, limit=10_000)
     now = datetime.now(timezone.utc)
 
@@ -1152,7 +1166,7 @@ def fetch_service_core_worklist(path: Path = SERVICE_DB_PATH, per_stage_limit: i
                 "label": SERVICE_CORE_STAGE_LABELS.get(stage, stage),
                 "count": len(items),
                 "share_pct": round((float(len(items)) / float(total_open)) * 100.0, 1) if total_open else 0.0,
-                "items": items[: max(1, int(per_stage_limit))],
+                "items": items[:safe_per_stage_limit],
             }
         )
 
@@ -1431,6 +1445,7 @@ def bulk_update_queue_actions(
 
 def fetch_activity(shipment_id: str, path: Path = SERVICE_DB_PATH, limit: int = 30) -> List[Dict[str, object]]:
     init_service_store(path)
+    safe_limit = _safe_positive_int(limit, 30, min_value=1, max_value=500)
 
     conn = sqlite3.connect(path)
     conn.row_factory = sqlite3.Row
@@ -1445,7 +1460,7 @@ def fetch_activity(shipment_id: str, path: Path = SERVICE_DB_PATH, limit: int = 
             ORDER BY id DESC
             LIMIT ?
             """,
-            (shipment_id, limit),
+            (shipment_id, safe_limit),
         ).fetchall()
     finally:
         conn.close()
@@ -1464,6 +1479,7 @@ def fetch_activity(shipment_id: str, path: Path = SERVICE_DB_PATH, limit: int = 
 
 def list_recent_activity(path: Path = SERVICE_DB_PATH, limit: int = 100) -> List[Dict[str, object]]:
     init_service_store(path)
+    safe_limit = _safe_positive_int(limit, 100, min_value=1, max_value=1_000)
 
     conn = sqlite3.connect(path)
     conn.row_factory = sqlite3.Row
@@ -1477,7 +1493,7 @@ def list_recent_activity(path: Path = SERVICE_DB_PATH, limit: int = 100) -> List
             ORDER BY id DESC
             LIMIT ?
             """,
-            (limit,),
+            (safe_limit,),
         ).fetchall()
     finally:
         conn.close()
@@ -1644,6 +1660,7 @@ def upsert_incident_from_recommendation(
 
 def list_incidents(path: Path = SERVICE_DB_PATH, limit: int = 50) -> List[Dict[str, object]]:
     init_service_store(path)
+    safe_limit = _safe_positive_int(limit, 50, min_value=1, max_value=500)
 
     conn = sqlite3.connect(path)
     conn.row_factory = sqlite3.Row
@@ -1655,7 +1672,7 @@ def list_incidents(path: Path = SERVICE_DB_PATH, limit: int = 50) -> List[Dict[s
             ORDER BY updated_at DESC
             LIMIT ?
             """,
-            (limit,),
+            (safe_limit,),
         ).fetchall()
         return [dict(r) for r in rows]
     finally:
@@ -1721,6 +1738,7 @@ def log_pipeline_run(
 
 def list_pipeline_runs(path: Path = SERVICE_DB_PATH, limit: int = 30) -> List[Dict[str, object]]:
     init_service_store(path)
+    safe_limit = _safe_positive_int(limit, 30, min_value=1, max_value=500)
     conn = sqlite3.connect(path)
     conn.row_factory = sqlite3.Row
     try:
@@ -1731,7 +1749,7 @@ def list_pipeline_runs(path: Path = SERVICE_DB_PATH, limit: int = 30) -> List[Di
             ORDER BY finished_at DESC
             LIMIT ?
             """,
-            (limit,),
+            (safe_limit,),
         ).fetchall()
         return [dict(r) for r in rows]
     finally:

@@ -23,6 +23,9 @@ from control_tower.service_store import (
     fetch_service_core_worklist,
     fetch_workflow_sla_snapshot,
     incident_recommendations_from_metrics,
+    list_incidents,
+    list_pipeline_runs,
+    list_recent_activity,
     upsert_incident,
     upsert_incident_from_recommendation,
     update_queue_action,
@@ -368,6 +371,19 @@ class TestServiceStore(unittest.TestCase):
         self.assertIn("age_buckets", snapshot)
         self.assertIn("stage_sla", snapshot)
         self.assertIn("breached_candidates", snapshot)
+
+    def test_query_limits_are_safely_bounded(self) -> None:
+        queue_rows = fetch_queue(path=SERVICE_DB_PATH, limit=-10)
+        self.assertGreater(len(queue_rows), 0)
+
+        recent_activity = list_recent_activity(path=SERVICE_DB_PATH, limit=999999)
+        self.assertLessEqual(len(recent_activity), 1000)
+
+        incidents = list_incidents(path=SERVICE_DB_PATH, limit=0)
+        self.assertLessEqual(len(incidents), 500)
+
+        runs = list_pipeline_runs(path=SERVICE_DB_PATH, limit=-1)
+        self.assertLessEqual(len(runs), 500)
 
 
 if __name__ == "__main__":
