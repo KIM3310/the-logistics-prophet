@@ -101,6 +101,17 @@ python3 -m streamlit run app/dashboard.py
 - `operator / ops123!`
 - `viewer / view123!`
 
+## Cloudflare Pages + AdSense 준비
+Streamlit 런타임과 별개로 심사용 정적 사이트를 `site/`에 추가했습니다.
+
+- 엔트리: `site/index.html`
+- 정책 페이지: `site/privacy.html`, `site/terms.html`, `site/contact.html`
+- 크롤러/광고 파일: `site/ads.txt`, `site/robots.txt`, `site/sitemap.xml`
+
+Cloudflare Pages 배포 시:
+- Build command: `(none)`
+- Output directory: `site`
+
 ## UI 모드 (Plain / Safe / Cinematic)
 브라우저/환경 호환성을 위해 UI는 Streamlit 기본 컴포넌트(컨테이너/컬럼/테이블)로 구성되어 있습니다.
 
@@ -112,6 +123,22 @@ python3 -m streamlit run app/dashboard.py
 Blank screen 트러블슈팅:
 - `http://127.0.0.1:8501?smoke=1` (최소 렌더링 확인)
 - `http://127.0.0.1:8501?ui=plain` (시각 요소 최소화)
+
+## Community Integrations (Optional)
+Governance 탭에 Formspree/Disqus/Giscus 연동 패널을 추가할 수 있습니다.
+
+```bash
+LP_FORMSPREE_ENDPOINT=https://formspree.io/f/xxxxxx
+LP_DISQUS_SHORTNAME=your-shortname
+LP_DISQUS_IDENTIFIER=the-logistics-prophet-governance
+LP_COMMUNITY_PAGE_URL=https://github.com/KIM3310/the-logistics-prophet
+LP_GISCUS_REPO=owner/repo
+LP_GISCUS_REPO_ID=R_kgxxxx
+LP_GISCUS_CATEGORY=General
+LP_GISCUS_CATEGORY_ID=DIC_kwxxxx
+LP_GISCUS_MAPPING=specific
+LP_GISCUS_TERM=the-logistics-prophet-governance
+```
 
 ## 빠른 네비게이션 (Deep link)
 - `?page=control-tower`
