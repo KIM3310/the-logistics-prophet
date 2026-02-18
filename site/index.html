@@ -6,7 +6,6 @@
   <meta name="google-adsense-account" content="ca-pub-0000000000000000" />
   <title>The Logistics Prophet | Predictive Control Tower</title>
   <meta name="description" content="Predictive logistics control tower with quality gates, model evidence, and operational governance." />
-  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-0000000000000000" crossorigin="anonymous"></script>
   <style>
     :root { --bg:#f5f7fb; --card:#fff; --line:#d8dfef; --ink:#10203f; --muted:#4e5f82; --accent:#1f5fff; }
     * { box-sizing:border-box; }
@@ -21,11 +20,16 @@
     .ad { min-height:96px; border:1px dashed var(--line); border-radius:10px; padding:8px; background:#fbfcff; }
     footer { max-width:980px; margin:0 auto; padding:0 18px 34px; color:var(--muted); font-size:14px; }
   </style>
+
+<meta name="ga-measurement-id" content="G-XXXXXXXXXX" />
+<meta name="clarity-project-id" content="CLARITY_PROJECT_ID" />
+<meta name="analytics-require-consent" content="false" />
 </head>
 <body>
   <header>
     <nav>
       <a href="./index.html">Home</a>
+      <a href="./about.html">About</a>
       <a href="./privacy.html">Privacy</a>
       <a href="./terms.html">Terms</a>
       <a href="./contact.html">Contact</a>
@@ -65,10 +69,32 @@
     </section>
   </main>
   <footer>
-    Contact: logistics-prophet@ops.local · Last updated: 2026-02-18
+    Contact: <a href="https://github.com/KIM3310/the-logistics-prophet/issues">GitHub Issues</a> · Last updated: 2026-02-18
   </footer>
   <script>
-    try { (window.adsbygoogle = window.adsbygoogle || []).push({}); } catch (e) {}
+    function validAdSenseClient(value) {
+      return /^ca-pub-\d{16}$/.test(value || "") && value !== "ca-pub-0000000000000000";
+    }
+    function validAdSenseSlot(value) {
+      return /^\d{8,20}$/.test(value || "") && value !== "1234567890";
+    }
+    (function initializeAdsense() {
+      const adNode = document.querySelector(".adsbygoogle");
+      if (!adNode) return;
+      const client = String(adNode.getAttribute("data-ad-client") || "").trim();
+      const slot = String(adNode.getAttribute("data-ad-slot") || "").trim();
+      if (!validAdSenseClient(client) || !validAdSenseSlot(slot)) return;
+      const script = document.createElement("script");
+      script.async = true;
+      script.src = `https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${encodeURIComponent(client)}`;
+      script.crossOrigin = "anonymous";
+      script.onload = function () {
+        try { (window.adsbygoogle = window.adsbygoogle || []).push({}); } catch (_err) {}
+      };
+      document.head.appendChild(script);
+    })();
   </script>
+
+<script defer src="./analytics.js"></script>
 </body>
 </html>
