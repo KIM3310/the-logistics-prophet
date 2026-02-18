@@ -105,7 +105,7 @@ python3 -m streamlit run app/dashboard.py
 Streamlit 런타임과 별개로 심사용 정적 사이트를 `site/`에 추가했습니다.
 
 - 엔트리: `site/index.html`
-- 정책 페이지: `site/privacy.html`, `site/terms.html`, `site/contact.html`, `site/compliance.html`
+- 정책 페이지: `site/about.html`, `site/privacy.html`, `site/terms.html`, `site/contact.html`, `site/compliance.html`
 - 크롤러/광고 파일: `site/ads.txt`, `site/robots.txt`, `site/sitemap.xml`
 - 보안 헤더 템플릿: `site/_headers`
 
