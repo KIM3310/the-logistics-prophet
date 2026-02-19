@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import csv
 import math
+import os
 from dataclasses import dataclass
 from datetime import date, timedelta
 from pathlib import Path
@@ -14,6 +15,8 @@ from .config import DEFAULT_DAYS, DEFAULT_ORDERS_PER_DAY, DEFAULT_SEED, RAW_DIR
 
 @dataclass
 class GenerationSummary:
+    start_date: str
+    end_date: str
     customers: int
     products: int
     warehouses: int
@@ -33,6 +36,17 @@ def _write_csv(path: Path, fieldnames: List[str], rows: List[dict]) -> None:
         writer = csv.DictWriter(f, fieldnames=fieldnames)
         writer.writeheader()
         writer.writerows(rows)
+
+
+def _parse_start_date(value: str) -> date:
+    raw = str(value or "").strip()
+    if not raw:
+        raise ValueError("start_date must be YYYY-MM-DD")
+    try:
+        parsed = date.fromisoformat(raw)
+    except ValueError as exc:
+        raise ValueError("start_date must be YYYY-MM-DD") from exc
+    return parsed
 
 
 def _build_customers(rng: np.random.Generator, n_customers: int, start_date: date) -> List[dict]:
@@ -114,11 +128,19 @@ def generate_synthetic_data(
     seed: int = DEFAULT_SEED,
     days: int = DEFAULT_DAYS,
     orders_per_day: int = DEFAULT_ORDERS_PER_DAY,
+    start_date: date | None = None,
 ) -> GenerationSummary:
     rng = np.random.default_rng(seed)
 
-    start_date = date.today() - timedelta(days=days)
+    if start_date is None:
+        anchored = str(os.getenv("LP_ANCHOR_DATE", "")).strip()
+        if anchored:
+            start_date = _parse_start_date(anchored)
+        else:
+            start_date = date.today() - timedelta(days=days)
+
     date_axis = [start_date + timedelta(days=i) for i in range(days)]
+    end_date = date_axis[-1]
 
     n_customers = max(1200, (days * orders_per_day) // 5)
     n_products = 180
@@ -330,6 +352,8 @@ def generate_synthetic_data(
     )
 
     return GenerationSummary(
+        start_date=start_date.isoformat(),
+        end_date=end_date.isoformat(),
         customers=len(customers),
         products=len(products),
         warehouses=len(warehouses),

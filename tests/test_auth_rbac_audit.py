@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 import sqlite3
 import subprocess
 import sys
@@ -15,6 +16,7 @@ if str(SRC) not in sys.path:
 from control_tower.config import SERVICE_DB_PATH
 from control_tower.service_store import (
     authenticate_user,
+    authenticate_user_with_status,
     fetch_queue,
     init_service_store,
     update_queue_action,
@@ -92,6 +94,65 @@ class TestAuthRbacAudit(unittest.TestCase):
             result = verify_audit_chain(path=db_path)
             self.assertFalse(result.get("valid"))
             self.assertEqual(result.get("reason"), "invalid_payload_json")
+
+    def test_audit_chain_reports_unexpected_genesis_reset(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="logistics_audit_chain_reset_") as tmp:
+            db_path = Path(tmp) / "service.db"
+            init_service_store(path=db_path)
+
+            self.assertIsNotNone(authenticate_user("admin", "admin123!", path=db_path))
+            self.assertIsNotNone(authenticate_user("operator", "ops123!", path=db_path))
+
+            conn = sqlite3.connect(db_path)
+            try:
+                conn.execute(
+                    """
+                    UPDATE service_activity_log
+                    SET prev_hash = 'GENESIS'
+                    WHERE id = (SELECT MAX(id) FROM service_activity_log)
+                    """
+                )
+                conn.commit()
+            finally:
+                conn.close()
+
+            result = verify_audit_chain(path=db_path)
+            self.assertFalse(result.get("valid"))
+            self.assertEqual(result.get("reason"), "unexpected_genesis_reset")
+
+    def test_auth_lockout_policy_enforced(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="logistics_auth_lock_") as tmp:
+            db_path = Path(tmp) / "service.db"
+            old_attempt = os.environ.get("LP_AUTH_MAX_FAILED_ATTEMPTS")
+            old_lock = os.environ.get("LP_AUTH_LOCK_MINUTES")
+            try:
+                os.environ["LP_AUTH_MAX_FAILED_ATTEMPTS"] = "2"
+                os.environ["LP_AUTH_LOCK_MINUTES"] = "1"
+                init_service_store(path=db_path)
+
+                first = authenticate_user_with_status("admin", "wrong-password", path=db_path)
+                self.assertFalse(bool(first.get("ok")))
+                self.assertEqual(first.get("reason"), "invalid_credentials")
+                self.assertEqual(int(first.get("attempts_remaining", -1)), 1)
+
+                second = authenticate_user_with_status("admin", "wrong-password", path=db_path)
+                self.assertFalse(bool(second.get("ok")))
+                self.assertEqual(second.get("reason"), "account_locked")
+                self.assertEqual(int(second.get("attempts_remaining", -1)), 0)
+                self.assertTrue(str(second.get("locked_until", "")).strip())
+
+                blocked = authenticate_user_with_status("admin", "admin123!", path=db_path)
+                self.assertFalse(bool(blocked.get("ok")))
+                self.assertEqual(blocked.get("reason"), "account_locked")
+            finally:
+                if old_attempt is None:
+                    os.environ.pop("LP_AUTH_MAX_FAILED_ATTEMPTS", None)
+                else:
+                    os.environ["LP_AUTH_MAX_FAILED_ATTEMPTS"] = old_attempt
+                if old_lock is None:
+                    os.environ.pop("LP_AUTH_LOCK_MINUTES", None)
+                else:
+                    os.environ["LP_AUTH_LOCK_MINUTES"] = old_lock
 
 
 if __name__ == "__main__":
