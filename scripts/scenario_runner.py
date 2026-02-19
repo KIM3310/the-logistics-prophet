@@ -26,8 +26,10 @@ from control_tower.config import (  # noqa: E402
     SPARQL_RESULTS_PATH,
 )
 from control_tower.evidence_pack import build_evidence_pack_bytes  # noqa: E402
+from control_tower.service_health import build_service_health_report  # noqa: E402
 from control_tower.service_store import (  # noqa: E402
     SERVICE_DB_PATH,
+    fetch_ops_health,
     fetch_queue_summary,
     fetch_service_core_snapshot,
     fetch_service_core_worklist,
@@ -42,6 +44,7 @@ class Verdict:
     pipeline_ready: bool
     quality_status: str
     audit_valid: bool
+    service_health_status: str
 
 
 def _read_json(path: Path) -> Dict:
@@ -82,8 +85,10 @@ def _render_md(
     core_snapshot: Dict,
     worklist: Dict,
     sla: Dict,
+    ops_health: Dict,
     incidents: List[Dict],
     audit: Dict,
+    service_health: Dict,
     evidence_zip_name: str,
 ) -> str:
     latest = metrics.get("kpi_latest", {}) if isinstance(metrics, dict) else {}
@@ -125,9 +130,22 @@ def _render_md(
 
     lines.append("## Quality Gate")
     lines.append(f"- Status: `{q_status}` (fails={quality_gate.get('fail_count', quality.get('fail_count', 0))}, warns={quality_gate.get('warn_count', quality.get('warn_count', 0))})")
-    if isinstance(quality, dict) and quality.get("failed_checks"):
+    failed_checks: List[str] = []
+    if isinstance(quality, dict):
+        checks = quality.get("checks", [])
+        if isinstance(checks, list):
+            for item in checks:
+                if not isinstance(item, dict):
+                    continue
+                if str(item.get("status", "")).lower() != "fail":
+                    continue
+                name = str(item.get("name", "")).strip()
+                detail = str(item.get("detail", "")).strip()
+                if name or detail:
+                    failed_checks.append(f"{name}: {detail}" if detail else name)
+    if failed_checks:
         lines.append("- Failed checks (top):")
-        for item in list(quality.get("failed_checks", []))[:8]:
+        for item in failed_checks[:8]:
             lines.append(f"  - {item}")
     lines.append("")
 
@@ -154,14 +172,18 @@ def _render_md(
             lines.append(
                 f"- `{item.get('shipment_id','')}` risk=`{item.get('risk_band','')}` urgency=`{item.get('urgency_score','')}` next=`{item.get('next_step','')}` why=`{item.get('why','')}`"
             )
-        lines.append("")
+    lines.append("")
 
     lines.append("## SLA / Health Signals")
     if isinstance(sla, dict):
-        lines.append(f"- Past ETA: `{sla.get('past_eta', '-')}`")
-        lines.append(f"- Stale 24h+: `{sla.get('stale_24h', '-')}`")
-        lines.append(f"- Critical unassigned: `{sla.get('critical_unassigned', '-')}`")
-        lines.append(f"- Owner backlog: `{sla.get('owner_backlog', '-')}`")
+        lines.append(f"- Unresolved total: `{sla.get('unresolved_total', '-')}`")
+        lines.append(f"- SLA breached total: `{sla.get('breached_total', '-')}`")
+        lines.append(f"- SLA breach rate: `{sla.get('breach_rate_pct', '-')}`%")
+    if isinstance(ops_health, dict):
+        lines.append(f"- Past ETA: `{ops_health.get('overdue_eta', '-')}`")
+        lines.append(f"- Stale 24h+: `{ops_health.get('stale_24h', '-')}`")
+        lines.append(f"- Critical unassigned: `{ops_health.get('critical_unassigned', '-')}`")
+        lines.append(f"- Avg unresolved age(h): `{ops_health.get('avg_unresolved_age_hours', '-')}`")
     lines.append("")
 
     lines.append("## Governance")
@@ -170,6 +192,24 @@ def _render_md(
     open_incidents = [row for row in incidents if str(row.get("status", "")).lower() in {"open", "monitoring"}]
     lines.append(f"- Open/Monitoring incidents: `{len(open_incidents)}` (total={len(incidents)})")
     lines.append("")
+
+    lines.append("## Service Health Contract")
+    lines.append(f"- Overall status: `{service_health.get('overall_status', 'unknown')}`")
+    summary = service_health.get("summary", {}) if isinstance(service_health, dict) else {}
+    lines.append(
+        f"- pass={summary.get('pass_count', 0)} warn={summary.get('warn_count', 0)} fail={summary.get('fail_count', 0)}"
+    )
+    checks = service_health.get("checks", []) if isinstance(service_health, dict) else []
+    if checks:
+        lines.append("| Check | Status | Detail |")
+        lines.append("| --- | --- | --- |")
+        for item in checks[:12]:
+            if not isinstance(item, dict):
+                continue
+            lines.append(
+                f"| {item.get('id','')} | {item.get('status','')} | {str(item.get('detail','')).replace('|', '/')} |"
+            )
+        lines.append("")
 
     lines.append("## Reproducibility")
     lines.append("```bash")
@@ -214,8 +254,37 @@ def main() -> int:
     core_snapshot = fetch_service_core_snapshot(SERVICE_DB_PATH)
     worklist = fetch_service_core_worklist(SERVICE_DB_PATH, per_stage_limit=6)
     sla = fetch_workflow_sla_snapshot(SERVICE_DB_PATH)
+    ops_health = fetch_ops_health(SERVICE_DB_PATH)
     incidents = list_incidents(SERVICE_DB_PATH, limit=50)
     audit = verify_audit_chain(path=SERVICE_DB_PATH, limit=10000)
+    service_health = build_service_health_report(
+        pipeline_status_path=PIPELINE_STATUS_PATH,
+        max_pipeline_age_hours=24.0,
+        min_model_auc=0.72,
+        strict_queue_parity=True,
+    )
+
+    # Self-healing path: if artifacts exist but health contract fails
+    # (for example, queue parity changed by local tests), rebuild once.
+    if ok and str(service_health.get("overall_status", "")) == "fail":
+        rebuilt = _ensure_pipeline(force=True)
+        ok = bool(ok and rebuilt)
+        metrics = _read_json(MONITORING_METRICS_PATH)
+        quality = _read_json(QUALITY_REPORT_PATH)
+        pipeline_status = _read_json(PIPELINE_STATUS_PATH)
+        queue_summary = fetch_queue_summary(SERVICE_DB_PATH)
+        core_snapshot = fetch_service_core_snapshot(SERVICE_DB_PATH)
+        worklist = fetch_service_core_worklist(SERVICE_DB_PATH, per_stage_limit=6)
+        sla = fetch_workflow_sla_snapshot(SERVICE_DB_PATH)
+        ops_health = fetch_ops_health(SERVICE_DB_PATH)
+        incidents = list_incidents(SERVICE_DB_PATH, limit=50)
+        audit = verify_audit_chain(path=SERVICE_DB_PATH, limit=10000)
+        service_health = build_service_health_report(
+            pipeline_status_path=PIPELINE_STATUS_PATH,
+            max_pipeline_age_hours=24.0,
+            min_model_auc=0.72,
+            strict_queue_parity=True,
+        )
 
     include_graph = not bool(args.no_graph)
     include_ops = not bool(args.no_ops_report)
@@ -235,21 +304,30 @@ def main() -> int:
         core_snapshot=core_snapshot,
         worklist=worklist,
         sla=sla,
+        ops_health=ops_health,
         incidents=incidents,
         audit=audit,
+        service_health=service_health,
         evidence_zip_name=evidence_path.name,
     )
     report_path = out_dir / "report.md"
     report_path.write_text(report_md, encoding="utf-8")
 
     quality_status = str(metrics.get("quality_gate", {}).get("status", quality.get("status", "unknown")) or "unknown")
-    verdict = Verdict(pipeline_ready=ok, quality_status=quality_status, audit_valid=bool(audit.get("valid", False)))
+    health_status = str(service_health.get("overall_status", "unknown") or "unknown")
+    verdict = Verdict(
+        pipeline_ready=ok,
+        quality_status=quality_status,
+        audit_valid=bool(audit.get("valid", False)),
+        service_health_status=health_status,
+    )
     (out_dir / "verdict.json").write_text(
         json.dumps(
             {
                 "pipeline_ready": verdict.pipeline_ready,
                 "quality_status": verdict.quality_status,
                 "audit_valid": verdict.audit_valid,
+                "service_health_status": verdict.service_health_status,
                 "out_dir": str(out_dir),
                 "report": str(report_path),
                 "evidence_pack": str(evidence_path),
@@ -273,9 +351,10 @@ def main() -> int:
         return 3
     if not verdict.audit_valid:
         return 4
+    if verdict.service_health_status == "fail":
+        return 5
     return 0
 
 
 if __name__ == "__main__":
     raise SystemExit(main())
-

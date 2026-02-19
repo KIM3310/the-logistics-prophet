@@ -3,10 +3,11 @@ from __future__ import annotations
 from collections import Counter
 import hashlib
 import json
+import os
 import secrets
 import sqlite3
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Dict, List, Tuple
 
@@ -65,6 +66,32 @@ QUEUE_TRANSITIONS: Dict[str, set[str]] = {
     "Resolved": set(),
     "Dismissed": set(),
 }
+
+
+def _env_flag(name: str, default: bool = False) -> bool:
+    raw = os.getenv(name)
+    if raw is None:
+        return default
+    return str(raw).strip().lower() in {"1", "true", "yes", "on"}
+
+
+def _env_password(name: str, fallback: str) -> str:
+    raw = str(os.getenv(name, "")).strip()
+    return raw if raw else fallback
+
+
+def _auth_max_failed_attempts() -> int:
+    primary = os.getenv("LP_AUTH_MAX_FAILED_ATTEMPTS")
+    fallback = os.getenv("LP_LOGIN_MAX_ATTEMPTS")
+    raw = primary if primary is not None else fallback
+    return _safe_positive_int(raw, default=5, min_value=1, max_value=30)
+
+
+def _auth_lock_minutes() -> int:
+    primary = os.getenv("LP_AUTH_LOCK_MINUTES")
+    fallback = os.getenv("LP_LOGIN_LOCK_MINUTES")
+    raw = primary if primary is not None else fallback
+    return _safe_positive_int(raw, default=1, min_value=1, max_value=1440)
 
 
 def _ensure_columns(conn: sqlite3.Connection, table: str, required: Dict[str, str]) -> None:
@@ -351,6 +378,8 @@ def init_service_store(path: Path = SERVICE_DB_PATH) -> None:
                 "created_at": "TEXT DEFAULT ''",
                 "updated_at": "TEXT DEFAULT ''",
                 "last_login_at": "TEXT DEFAULT ''",
+                "failed_login_count": "INTEGER DEFAULT 0",
+                "locked_until": "TEXT DEFAULT ''",
             },
         )
         conn.execute("CREATE INDEX IF NOT EXISTS idx_service_queue_owner ON service_queue(owner)")
@@ -369,15 +398,18 @@ def init_service_store(path: Path = SERVICE_DB_PATH) -> None:
 
 
 def _ensure_default_users(conn: sqlite3.Connection) -> None:
+    if not _env_flag("LP_BOOTSTRAP_DEMO_USERS", default=True):
+        return
+
     cnt = conn.execute("SELECT COUNT(*) FROM service_users").fetchone()[0]
     if cnt > 0:
         return
 
     now = utc_now_iso()
     defaults = [
-        ("admin", "Admin", "admin", "admin123!"),
-        ("operator", "Operator", "operator", "ops123!"),
-        ("viewer", "Viewer", "viewer", "view123!"),
+        ("admin", "Admin", "admin", _env_password("LP_DEMO_ADMIN_PASSWORD", "admin123!")),
+        ("operator", "Operator", "operator", _env_password("LP_DEMO_OPERATOR_PASSWORD", "ops123!")),
+        ("viewer", "Viewer", "viewer", _env_password("LP_DEMO_VIEWER_PASSWORD", "view123!")),
     ]
     rows = []
     for username, display_name, role, password in defaults:
@@ -402,11 +434,11 @@ def list_users(path: Path = SERVICE_DB_PATH, include_inactive: bool = False) -> 
     try:
         if include_inactive:
             rows = conn.execute(
-                "SELECT username, display_name, role, is_active, created_at, updated_at, last_login_at FROM service_users ORDER BY username"
+                "SELECT username, display_name, role, is_active, created_at, updated_at, last_login_at, failed_login_count, locked_until FROM service_users ORDER BY username"
             ).fetchall()
         else:
             rows = conn.execute(
-                "SELECT username, display_name, role, is_active, created_at, updated_at, last_login_at FROM service_users WHERE is_active = 1 ORDER BY username"
+                "SELECT username, display_name, role, is_active, created_at, updated_at, last_login_at, failed_login_count, locked_until FROM service_users WHERE is_active = 1 ORDER BY username"
             ).fetchall()
         return [dict(r) for r in rows]
     finally:
@@ -444,17 +476,22 @@ def create_or_update_user(
 
         conn.execute(
             """
-            INSERT INTO service_users (username, display_name, role, password_hash, password_salt, is_active, created_at, updated_at, last_login_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO service_users (
+                username, display_name, role, password_hash, password_salt,
+                is_active, created_at, updated_at, last_login_at, failed_login_count, locked_until
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ON CONFLICT(username) DO UPDATE SET
                 display_name=excluded.display_name,
                 role=excluded.role,
                 password_hash=excluded.password_hash,
                 password_salt=excluded.password_salt,
                 is_active=excluded.is_active,
-                updated_at=excluded.updated_at
+                updated_at=excluded.updated_at,
+                failed_login_count=0,
+                locked_until=''
             """,
-            (username, display_name, role, password_hash, password_salt, 1 if is_active else 0, now, now, ""),
+            (username, display_name, role, password_hash, password_salt, 1 if is_active else 0, now, now, "", 0, ""),
         )
 
         curr = conn.execute(
@@ -479,29 +516,133 @@ def create_or_update_user(
         conn.close()
 
 
-def authenticate_user(username: str, password: str, path: Path = SERVICE_DB_PATH) -> Dict[str, object] | None:
+def authenticate_user_with_status(username: str, password: str, path: Path = SERVICE_DB_PATH) -> Dict[str, object]:
     init_service_store(path)
+    max_failed_attempts = _auth_max_failed_attempts()
+    lock_minutes = _auth_lock_minutes()
+    now = datetime.now(timezone.utc)
+    now_iso = now.isoformat()
+
+    username = str(username or "").strip()
     conn = sqlite3.connect(path)
     conn.row_factory = sqlite3.Row
     try:
+        if not username:
+            return {
+                "ok": False,
+                "reason": "invalid_credentials",
+                "attempts_remaining": max_failed_attempts,
+                "locked_until": "",
+                "user": None,
+            }
+
         row = conn.execute(
             """
-            SELECT username, display_name, role, password_hash, password_salt, is_active
+            SELECT
+                username, display_name, role, password_hash, password_salt, is_active,
+                failed_login_count, locked_until
             FROM service_users WHERE username = ?
             """,
             (username,),
         ).fetchone()
         if not row:
-            return None
+            return {
+                "ok": False,
+                "reason": "invalid_credentials",
+                "attempts_remaining": max_failed_attempts,
+                "locked_until": "",
+                "user": None,
+            }
 
         if int(row["is_active"]) != 1:
-            return None
+            return {
+                "ok": False,
+                "reason": "inactive_user",
+                "attempts_remaining": 0,
+                "locked_until": "",
+                "user": None,
+            }
+
+        locked_until_raw = str(row["locked_until"] or "")
+        locked_until_dt = _parse_iso_datetime(locked_until_raw)
+        if locked_until_dt is not None and locked_until_dt > now:
+            _append_activity(
+                conn=conn,
+                actor=username,
+                actor_role=str(row["role"]),
+                action="login_blocked_locked",
+                entity_type="auth",
+                entity_id=username,
+                payload={"username": username, "locked_until": locked_until_dt.isoformat()},
+                previous_state={},
+                new_state={},
+                reason="interactive login blocked",
+            )
+            conn.commit()
+            return {
+                "ok": False,
+                "reason": "account_locked",
+                "attempts_remaining": 0,
+                "locked_until": locked_until_dt.isoformat(),
+                "user": None,
+            }
 
         if not _verify_password(password, str(row["password_hash"]), str(row["password_salt"])):
-            return None
+            failed_count = int(row["failed_login_count"] or 0) + 1
+            attempts_remaining = max(0, max_failed_attempts - failed_count)
+            next_locked_until = ""
+            action = "login_failure"
+            reason = "invalid_credentials"
+            if failed_count >= max_failed_attempts:
+                lock_until = now + timedelta(minutes=lock_minutes)
+                next_locked_until = lock_until.isoformat()
+                attempts_remaining = 0
+                action = "login_locked"
+                reason = "account_locked"
 
-        now = utc_now_iso()
-        conn.execute("UPDATE service_users SET last_login_at = ?, updated_at = ? WHERE username = ?", (now, now, username))
+            conn.execute(
+                """
+                UPDATE service_users
+                SET failed_login_count = ?, locked_until = ?, updated_at = ?
+                WHERE username = ?
+                """,
+                (failed_count, next_locked_until, now_iso, username),
+            )
+            _append_activity(
+                conn=conn,
+                actor=username,
+                actor_role=str(row["role"]),
+                action=action,
+                entity_type="auth",
+                entity_id=username,
+                payload={
+                    "username": username,
+                    "failed_login_count": failed_count,
+                    "max_failed_attempts": max_failed_attempts,
+                    "attempts_remaining": attempts_remaining,
+                    "locked_until": next_locked_until,
+                },
+                previous_state={},
+                new_state={},
+                reason="interactive login failure",
+            )
+            conn.commit()
+            return {
+                "ok": False,
+                "reason": reason,
+                "attempts_remaining": attempts_remaining,
+                "locked_until": next_locked_until,
+                "user": None,
+            }
+
+        conn.execute(
+            """
+            UPDATE service_users
+            SET last_login_at = ?, updated_at = ?, failed_login_count = 0, locked_until = ''
+            WHERE username = ?
+            """,
+            (now_iso, now_iso, username),
+        )
 
         _append_activity(
             conn=conn,
@@ -512,18 +653,33 @@ def authenticate_user(username: str, password: str, path: Path = SERVICE_DB_PATH
             entity_id=username,
             payload={"username": username},
             previous_state={},
-            new_state={"last_login_at": now},
+            new_state={"last_login_at": now_iso},
             reason="interactive login",
         )
         conn.commit()
 
-        return {
+        user = {
             "username": str(row["username"]),
             "display_name": str(row["display_name"]),
             "role": str(row["role"]),
         }
+        return {
+            "ok": True,
+            "reason": "ok",
+            "attempts_remaining": max_failed_attempts,
+            "locked_until": "",
+            "user": user,
+        }
     finally:
         conn.close()
+
+
+def authenticate_user(username: str, password: str, path: Path = SERVICE_DB_PATH) -> Dict[str, object] | None:
+    result = authenticate_user_with_status(username=username, password=password, path=path)
+    if not bool(result.get("ok")):
+        return None
+    user = result.get("user")
+    return user if isinstance(user, dict) else None
 
 
 def _append_activity(
@@ -609,6 +765,7 @@ def verify_audit_chain(path: Path = SERVICE_DB_PATH, limit: int = 5000) -> Dict[
         conn.close()
 
     prev_hash = "GENESIS"
+    chain_started = False
     checked = 0
     skipped_legacy = 0
     latest_checked_id = 0
@@ -652,8 +809,27 @@ def verify_audit_chain(path: Path = SERVICE_DB_PATH, limit: int = 5000) -> Dict[
         if row_prev_hash == "" and row_event_hash:
             row_prev_hash = "GENESIS"
 
-        if row_prev_hash == "GENESIS":
+        if not chain_started:
+            if row_prev_hash != "GENESIS":
+                return {
+                    "valid": False,
+                    "checked": checked,
+                    "skipped_legacy": skipped_legacy,
+                    "failed_id": int(row["id"]),
+                    "reason": "first_prev_hash_mismatch",
+                    "latest_hash": prev_hash,
+                }
             prev_hash = "GENESIS"
+            chain_started = True
+        elif row_prev_hash == "GENESIS":
+            return {
+                "valid": False,
+                "checked": checked,
+                "skipped_legacy": skipped_legacy,
+                "failed_id": int(row["id"]),
+                "reason": "unexpected_genesis_reset",
+                "latest_hash": prev_hash,
+            }
 
         if row_prev_hash != prev_hash:
             return {
@@ -691,11 +867,30 @@ def verify_audit_chain(path: Path = SERVICE_DB_PATH, limit: int = 5000) -> Dict[
 
 def upsert_queue_rows(rows: List[Dict[str, object]], path: Path = SERVICE_DB_PATH) -> int:
     init_service_store(path)
+    if not rows:
+        raise ValueError("queue sync rows must not be empty")
+
     now = utc_now_iso()
+    normalized_rows: Dict[str, Dict[str, object]] = {}
+    duplicate_count = 0
+    for row in rows:
+        shipment_id = str(row.get("shipment_id", "")).strip()
+        if not shipment_id:
+            continue
+        if shipment_id in normalized_rows:
+            duplicate_count += 1
+        normalized_rows[shipment_id] = row
+
+    if not normalized_rows:
+        raise ValueError("queue sync rows contain no valid shipment_id")
+
+    incoming_ids = set(normalized_rows.keys())
 
     conn = sqlite3.connect(path)
     conn.row_factory = sqlite3.Row
     try:
+        existing_ids = {str(r[0]) for r in conn.execute("SELECT shipment_id FROM service_queue").fetchall()}
+
         sql = (
             "INSERT INTO service_queue ("
             "shipment_id, ship_date, order_id, risk_score, risk_band, prediction, key_driver, driver_2, driver_3, "
@@ -715,7 +910,7 @@ def upsert_queue_rows(rows: List[Dict[str, object]], path: Path = SERVICE_DB_PAT
         )
 
         payload = []
-        for row in rows:
+        for row in normalized_rows.values():
             payload.append(
                 (
                     str(row.get("shipment_id", "")),
@@ -738,6 +933,24 @@ def upsert_queue_rows(rows: List[Dict[str, object]], path: Path = SERVICE_DB_PAT
             )
 
         conn.executemany(sql, payload)
+        conn.execute("DROP TABLE IF EXISTS _queue_sync_ids")
+        conn.execute("CREATE TEMP TABLE _queue_sync_ids (shipment_id TEXT PRIMARY KEY)")
+        conn.executemany(
+            "INSERT INTO _queue_sync_ids (shipment_id) VALUES (?)",
+            [(shipment_id,) for shipment_id in sorted(incoming_ids)],
+        )
+        prune_cursor = conn.execute(
+            """
+            DELETE FROM service_queue
+            WHERE shipment_id NOT IN (SELECT shipment_id FROM _queue_sync_ids)
+            """
+        )
+        pruned_count = int(prune_cursor.rowcount or 0)
+        conn.execute("DROP TABLE IF EXISTS _queue_sync_ids")
+
+        added_count = len(incoming_ids - existing_ids)
+        retained_count = len(incoming_ids & existing_ids)
+
         _append_activity(
             conn=conn,
             actor="pipeline",
@@ -745,9 +958,15 @@ def upsert_queue_rows(rows: List[Dict[str, object]], path: Path = SERVICE_DB_PAT
             action="queue_sync",
             entity_type="queue",
             entity_id="bulk",
-            payload={"rows": len(payload)},
+            payload={
+                "rows": len(payload),
+                "added_count": added_count,
+                "retained_count": retained_count,
+                "pruned_count": pruned_count,
+                "duplicate_rows_dropped": duplicate_count,
+            },
             previous_state={},
-            new_state={"rows": len(payload)},
+            new_state={"rows": len(payload), "queue_size": len(incoming_ids)},
             reason="daily scoring sync",
         )
         conn.commit()
