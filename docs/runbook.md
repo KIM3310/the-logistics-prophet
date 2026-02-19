@@ -25,6 +25,7 @@ python3 scripts/push_datadog.py --apply-dashboard --apply-monitors
 7. Review `Incident Suggestions` and create one-click incident when rule triggers.
 8. Open incident if unresolved critical queue grows.
 9. Confirm queue state is persisted in `data/processed/service_store.db`.
+   - Queue sync는 최신 스코어 대상 기준으로 재동기화되며, 스테일 shipment는 자동 정리됩니다.
    - 동일 추천 규칙(`rule_id`)은 기존 Open/Monitoring 인시던트를 갱신하여 중복 생성을 방지합니다.
    - ETA는 ISO-8601 형식만 허용됩니다(예: `2026-02-13T12:30:00+00:00`).
    - Operator 상태 전이는 정책(Guardrail)에 의해 제한되며 Admin은 override 가능합니다.
@@ -39,6 +40,19 @@ Default credentials:
 - `operator / ops123!`
 - `viewer / view123!`
 
+Security toggles:
+- Disable demo bootstrap users: `LP_BOOTSTRAP_DEMO_USERS=0`
+- Override bootstrap passwords:
+```bash
+export LP_DEMO_ADMIN_PASSWORD="StrongAdminPass!123"
+export LP_DEMO_OPERATOR_PASSWORD="StrongOperatorPass!123"
+export LP_DEMO_VIEWER_PASSWORD="StrongViewerPass!123"
+```
+- Hide/show login credential hint in UI: `LP_SHOW_DEMO_CREDENTIALS=1`
+- Login lock policy: `LP_AUTH_MAX_FAILED_ATTEMPTS` (default: 5), `LP_AUTH_LOCK_MINUTES` (default: 1)
+  - legacy alias: `LP_LOGIN_MAX_ATTEMPTS`, `LP_LOGIN_LOCK_MINUTES`
+- Deterministic time-axis replay: `LP_ANCHOR_DATE=YYYY-MM-DD`
+
 Rotate users/passwords with:
 ```bash
 python3 scripts/manage_users.py --username alice --display-name "Alice" --role operator --password "StrongPass!123"
@@ -48,6 +62,7 @@ python3 scripts/manage_users.py --list
 Verify audit chain integrity:
 ```bash
 python3 scripts/verify_audit.py
+python3 scripts/service_health_audit.py --warn-as-error
 ```
 
 Check rule-based incident recommendations:

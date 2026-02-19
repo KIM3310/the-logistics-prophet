@@ -166,8 +166,22 @@ def main() -> None:
     started = datetime.now(timezone.utc).isoformat()
     run_id = f"RUN-{datetime.now(timezone.utc).strftime('%Y%m%d-%H%M%S')}"
     timer = time.time()
+    generate_step = [
+        sys.executable,
+        "scripts/generate_data.py",
+        "--seed",
+        "42",
+        "--days",
+        "120",
+        "--orders-per-day",
+        "120",
+    ]
+    anchored_start_date = str(os.getenv("LP_ANCHOR_DATE", "")).strip()
+    if anchored_start_date:
+        generate_step.extend(["--start-date", anchored_start_date])
+
     steps = [
-        [sys.executable, "scripts/generate_data.py", "--seed", "42", "--days", "120", "--orders-per-day", "120"],
+        generate_step,
         [sys.executable, "scripts/build_marts.py"],
         [sys.executable, "scripts/init_service_store.py"],
         [sys.executable, "scripts/run_data_quality.py"],

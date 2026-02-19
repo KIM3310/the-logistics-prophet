@@ -58,6 +58,7 @@ def write_monitoring_payload(
     quality_report: Dict[str, object] | None = None,
     sparql_results: Dict[str, object] | None = None,
     service_summary: Dict[str, object] | None = None,
+    service_health: Dict[str, object] | None = None,
     output_path: Path = MONITORING_METRICS_PATH,
 ) -> Dict[str, object]:
     critical_count = sum(1 for r in ranked_queue if r.get("risk_band") == "Critical")
@@ -90,6 +91,11 @@ def write_monitoring_payload(
             "critical_open": (service_summary or {}).get("critical_open", 0),
             "unresolved": (service_summary or {}).get("unresolved", 0),
             "status_breakdown": (service_summary or {}).get("status_breakdown", []),
+        },
+        "service_health": {
+            "overall_status": (service_health or {}).get("overall_status", "unknown"),
+            "fail_count": ((service_health or {}).get("summary", {}) or {}).get("fail_count", 0),
+            "warn_count": ((service_health or {}).get("summary", {}) or {}).get("warn_count", 0),
         },
     }
 

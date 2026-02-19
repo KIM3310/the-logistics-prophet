@@ -28,6 +28,7 @@ from control_tower.service_store import (
     list_recent_activity,
     upsert_incident,
     upsert_incident_from_recommendation,
+    upsert_queue_rows,
     update_queue_action,
 )
 
@@ -384,6 +385,36 @@ class TestServiceStore(unittest.TestCase):
 
         runs = list_pipeline_runs(path=SERVICE_DB_PATH, limit=-1)
         self.assertLessEqual(len(runs), 500)
+
+    def test_zz_queue_sync_prunes_stale_rows(self) -> None:
+        queue = fetch_queue(path=SERVICE_DB_PATH, limit=1000)
+        self.assertGreaterEqual(len(queue), 3)
+
+        keep = queue[:2]
+        payload = []
+        for row in keep:
+            payload.append(
+                {
+                    "shipment_id": str(row.get("shipment_id", "")),
+                    "ship_date": str(row.get("ship_date", "")),
+                    "order_id": str(row.get("order_id", "")),
+                    "risk_score": float(row.get("risk_score", 0.0) or 0.0),
+                    "risk_band": str(row.get("risk_band", "Low")),
+                    "prediction": int(float(row.get("prediction", 0) or 0)),
+                    "key_driver": str(row.get("key_driver", "")),
+                    "driver_2": str(row.get("driver_2", "")),
+                    "driver_3": str(row.get("driver_3", "")),
+                    "recommended_action": str(row.get("recommended_action", "")),
+                }
+            )
+
+        synced = upsert_queue_rows(payload, path=SERVICE_DB_PATH)
+        self.assertEqual(synced, 2)
+
+        refreshed = fetch_queue(path=SERVICE_DB_PATH, limit=1000)
+        shipment_ids = {str(row.get("shipment_id", "")) for row in refreshed}
+        expected_ids = {str(row.get("shipment_id", "")) for row in keep}
+        self.assertEqual(shipment_ids, expected_ids)
 
 
 if __name__ == "__main__":

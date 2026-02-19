@@ -101,6 +101,16 @@ python3 -m streamlit run app/dashboard.py
 - `operator / ops123!`
 - `viewer / view123!`
 
+보안/운영 옵션:
+- `LP_BOOTSTRAP_DEMO_USERS=0` 이면 기본 계정을 자동 생성하지 않습니다.
+- `LP_DEMO_ADMIN_PASSWORD`, `LP_DEMO_OPERATOR_PASSWORD`, `LP_DEMO_VIEWER_PASSWORD` 로 초기 비밀번호를 override 할 수 있습니다.
+- UI에서 계정 힌트는 기본적으로 숨김이며, `LP_SHOW_DEMO_CREDENTIALS=1` 일 때만 표시됩니다.
+- 로그인 잠금 정책: `LP_AUTH_MAX_FAILED_ATTEMPTS`(기본 5), `LP_AUTH_LOCK_MINUTES`(기본 1).
+  - legacy alias: `LP_LOGIN_MAX_ATTEMPTS`, `LP_LOGIN_LOCK_MINUTES`
+
+재현성 옵션:
+- `LP_ANCHOR_DATE=YYYY-MM-DD` 를 지정하면 synthetic 날짜 축이 고정되어 실행 시점과 무관하게 동일한 시계열로 생성됩니다.
+
 ## Cloudflare Pages + AdSense 준비
 Streamlit 런타임과 별개로 심사용 정적 사이트를 `site/`에 추가했습니다.
 
@@ -165,6 +175,7 @@ make dashboard
 
 ```bash
 make scenario
+make health
 # 또는:
 python3 scripts/scenario_runner.py --out-dir /tmp/lp-scenario
 ```
@@ -209,11 +220,16 @@ python3 scripts/replay_alert_scenario.py --push
 4. `Health`에서 past/stale/owner load 운영건전성 확인
 5. 모든 변경은 `service_store.db`에 저장되고 Activity Log로 추적
 
+Queue sync 정책:
+- `score_daily`/pipeline 동기화 시 최신 스코어셋 기준으로 queue를 재구성합니다.
+- 최신 셋에 없는 스테일 shipment는 queue에서 자동 제거되어 지표 누적 왜곡을 방지합니다.
+
 ## RBAC / Audit 운영 커맨드
 ```bash
 python3 scripts/manage_users.py --list
 python3 scripts/manage_users.py --username alice --display-name "Alice" --role operator --password "StrongPass!123"
 python3 scripts/verify_audit.py
+python3 scripts/service_health_audit.py --warn-as-error
 python3 scripts/service_core_snapshot.py
 python3 scripts/service_core_worklist.py
 python3 scripts/workflow_sla_snapshot.py

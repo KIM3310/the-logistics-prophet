@@ -26,7 +26,7 @@ from control_tower.evidence_pack import build_evidence_pack_bytes
 from control_tower.semantic_queries import load_instance_graph, query_shipment_evidence
 from control_tower.service_store import (
     allowed_next_statuses,
-    authenticate_user,
+    authenticate_user_with_status,
     bulk_update_queue_actions,
     create_or_update_user,
     derive_incident_recommendations,
@@ -124,6 +124,13 @@ def _query_param(name: str) -> Optional[str]:
     except Exception:
         pass
     return None
+
+
+def _env_flag(name: str, default: bool = False) -> bool:
+    raw = os.getenv(name)
+    if raw is None:
+        return default
+    return str(raw).strip().lower() in {"1", "true", "yes", "on"}
 
 
 def cinematic_ui_enabled() -> bool:
@@ -460,17 +467,41 @@ def render_login_gate() -> Dict[str, object]:
         password = st.text_input("Password", type="password")
         submitted = st.form_submit_button("Login")
 
-    with st.expander("Demo Credentials"):
-        st.code("admin / admin123!\noperator / ops123!\nviewer / view123!")
+    if _env_flag("LP_SHOW_DEMO_CREDENTIALS", default=False):
+        with st.expander("Demo Credentials"):
+            st.code("admin / admin123!\noperator / ops123!\nviewer / view123!")
+    else:
+        st.caption("Demo credential hints are hidden. Set `LP_SHOW_DEMO_CREDENTIALS=1` to display.")
 
     if submitted:
-        auth = authenticate_user(username.strip(), password, path=SERVICE_DB_PATH)
-        if auth:
-            st.session_state.auth_user = auth
-            st.success("Login successful")
-            st.rerun()
+        username_value = username.strip()
+        if not username_value or not password:
+            st.error("Username and password are required.")
         else:
-            st.error("Invalid credentials")
+            auth_result = authenticate_user_with_status(username_value, password, path=SERVICE_DB_PATH)
+            if bool(auth_result.get("ok")):
+                user_payload = auth_result.get("user") or {}
+                st.session_state.auth_user = user_payload
+                st.success("Login successful")
+                st.rerun()
+            else:
+                reason = str(auth_result.get("reason", "invalid_credentials"))
+                if reason == "account_locked":
+                    lock_until_raw = str(auth_result.get("locked_until", "") or "")
+                    lock_until = _parse_iso_dt(lock_until_raw)
+                    if lock_until is not None:
+                        remaining_sec = int(max(1.0, (lock_until - datetime.now(timezone.utc)).total_seconds()))
+                        st.error(f"Account is locked. Retry after {remaining_sec}s.")
+                    else:
+                        st.error("Account is locked. Retry later.")
+                elif reason == "inactive_user":
+                    st.error("This account is inactive. Contact admin.")
+                else:
+                    remaining = auth_result.get("attempts_remaining")
+                    if remaining is None:
+                        st.error("Invalid credentials.")
+                    else:
+                        st.error(f"Invalid credentials ({remaining} attempt(s) left).")
 
     st.stop()
 
@@ -1989,17 +2020,25 @@ def render_evidence_pack_panel(user: Dict[str, object]) -> None:
 def render_governance_overview_panel() -> None:
     with panel("Governance"):
         audit_result = verify_audit_chain(path=SERVICE_DB_PATH, limit=5000)
+        metrics = load_json(METRICS_PATH)
+        health = metrics.get("service_health", {}) if isinstance(metrics, dict) else {}
         valid = audit_result.get("valid")
         checked = audit_result.get("checked")
         latest = audit_result.get("latest_hash", "")
 
-        c1, c2, c3 = st.columns([1, 1, 2])
+        c1, c2, c3, c4 = st.columns([1, 1, 1, 2])
         with c1:
             st.metric("Audit Chain", "Valid" if valid else "Invalid")
         with c2:
             st.metric("Checked", int(checked or 0))
         with c3:
+            st.metric("Health", str(health.get("overall_status", "unknown")))
+        with c4:
             st.caption(f"Latest hash: `{str(latest)[:18]}...`" if latest else "Latest hash: -")
+
+        fail_count = int(health.get("fail_count", 0) or 0)
+        warn_count = int(health.get("warn_count", 0) or 0)
+        st.caption(f"Health checks: fail={fail_count}, warn={warn_count}")
 
         runs = list_pipeline_runs(SERVICE_DB_PATH, limit=12)
         if runs:

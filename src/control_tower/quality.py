@@ -213,18 +213,28 @@ def _check_sql_integrity(sqlite_path: Path) -> List[QualityCheck]:
         for col in ["distance_km", "weather_severity", "warehouse_load_pct", "order_value_usd"]:
             baseline = conn.execute(
                 f"""
-                SELECT {col} FROM (
-                    SELECT {col} FROM model_features ORDER BY ship_date DESC LIMIT 90
+                WITH ranked AS (
+                    SELECT
+                        {col} AS value,
+                        ROW_NUMBER() OVER (ORDER BY ship_date DESC, shipment_id DESC) AS rn
+                    FROM model_features
+                    WHERE {col} IS NOT NULL
                 )
-                WHERE {col} IS NOT NULL
+                SELECT value FROM ranked
+                WHERE rn BETWEEN 15 AND 104
                 """
             ).fetchall()
             recent = conn.execute(
                 f"""
-                SELECT {col} FROM (
-                    SELECT {col} FROM model_features ORDER BY ship_date DESC LIMIT 14
+                WITH ranked AS (
+                    SELECT
+                        {col} AS value,
+                        ROW_NUMBER() OVER (ORDER BY ship_date DESC, shipment_id DESC) AS rn
+                    FROM model_features
+                    WHERE {col} IS NOT NULL
                 )
-                WHERE {col} IS NOT NULL
+                SELECT value FROM ranked
+                WHERE rn BETWEEN 1 AND 14
                 """
             ).fetchall()
             base_arr = np.array([r[0] for r in baseline], dtype=float)

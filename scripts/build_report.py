@@ -13,6 +13,7 @@ if str(SRC) not in sys.path:
 
 from control_tower.config import (
     DAILY_RISK_QUEUE_PATH,
+    PIPELINE_STATUS_PATH,
     QUALITY_REPORT_PATH,
     SPARQL_RESULTS_PATH,
     SQLITE_PATH,
@@ -20,6 +21,7 @@ from control_tower.config import (
 )
 from control_tower.data_access import fetch_kpi_snapshot, fetch_recent_kpi_series
 from control_tower.ops_output import build_ops_html_report, write_monitoring_payload
+from control_tower.service_health import build_service_health_report
 from control_tower.service_store import fetch_queue_summary
 
 
@@ -48,6 +50,12 @@ def main() -> None:
     quality_report = _read_optional_json(QUALITY_REPORT_PATH)
     sparql_results = _read_optional_json(SPARQL_RESULTS_PATH)
     service_summary = fetch_queue_summary()
+    service_health = build_service_health_report(
+        pipeline_status_path=PIPELINE_STATUS_PATH,
+        max_pipeline_age_hours=24.0,
+        min_model_auc=0.72,
+        strict_queue_parity=True,
+    )
 
     build_ops_html_report(
         kpi_snapshot=kpi_snapshot,
@@ -63,6 +71,7 @@ def main() -> None:
         quality_report=quality_report,
         sparql_results=sparql_results,
         service_summary=service_summary,
+        service_health=service_health,
     )
 
     payload = {
@@ -71,6 +80,7 @@ def main() -> None:
         "quality_status": quality_report.get("status", "unknown"),
         "sparql_query_count": len(sparql_results.get("queries", [])),
         "service_unresolved": service_summary.get("unresolved", 0),
+        "service_health": service_health.get("overall_status", "unknown"),
         "report_path": "data/output/ops_report.html",
         "monitoring_path": "data/output/monitoring_metrics.json",
     }

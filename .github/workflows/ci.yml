@@ -45,6 +45,10 @@ jobs:
           test -f data/output/sparql_results.json
           test -f data/output/shap_global_importance.csv
 
+      - name: Service health audit
+        run: |
+          python scripts/service_health_audit.py --warn-as-error
+
       - name: Run tests
         run: |
           python -m unittest discover -s tests -p 'test_*.py'
