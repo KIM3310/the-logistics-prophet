@@ -4,7 +4,7 @@ ifeq ($(wildcard $(VENV_PY)), $(VENV_PY))
 PYTHON := $(VENV_PY)
 endif
 
-.PHONY: run generate marts service-init users audit quality semantic train score report monitor health core-snapshot core-worklist workflow-sla incident-reco incident-reco-apply datadog replay scenario test clean dashboard docker-build docker-up demo-local demo-local-kill demo-local-debug demo-local-open
+.PHONY: run generate marts service-init users audit quality semantic train score report monitor health core-snapshot core-worklist workflow-sla incident-reco incident-reco-apply incident-reco-ollama datadog replay scenario test clean dashboard docker-build docker-up demo-local demo-local-kill demo-local-debug demo-local-open
 
 run:
 	$(PYTHON) scripts/run_pipeline.py
@@ -59,6 +59,9 @@ incident-reco:
 
 incident-reco-apply:
 	$(PYTHON) scripts/recommend_incidents.py --apply
+
+incident-reco-ollama:
+	$(PYTHON) scripts/recommend_incidents.py --llm-provider ollama --ollama-healthz
 
 datadog:
 	$(PYTHON) scripts/push_datadog.py --dry-run --apply-dashboard --apply-monitors

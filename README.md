@@ -26,6 +26,7 @@ https://www.youtube.com/watch?v=NDZKmDZ_R-w
 - Bulk queue action (multi-shipment status/owner/ETA/note update)
 - Ops health analytics (overdue ETA, stale queue, critical unassigned, owner backlog)
 - Rule-based incident recommendation engine + one-click incident creation
+- Optional local Ollama incident brief enrichment (with deterministic stub fallback)
 - Recommendation incident deduplication (`rule_id` 기준으로 기존 Open/Monitoring 인시던트 재사용)
 - Core Board (Start/Check/Fix/Done load + urgent list + top causes)
 - Next Actions (Start/Check/Fix top action list with urgency score)
@@ -110,6 +111,13 @@ python3 -m streamlit run app/dashboard.py
 
 재현성 옵션:
 - `LP_ANCHOR_DATE=YYYY-MM-DD` 를 지정하면 synthetic 날짜 축이 고정되어 실행 시점과 무관하게 동일한 시계열로 생성됩니다.
+
+Ollama 옵션 (선택):
+- 기본값은 `stub`이며 외부 LLM 없이 동작합니다.
+- `LP_LLM_PROVIDER=ollama` 로 설정하면 incident recommendation에 로컬 Ollama 브리프를 추가합니다.
+- `LP_OLLAMA_BASE_URL` (기본 `http://127.0.0.1:11434`)
+- `LP_OLLAMA_MODEL` (기본 `llama3.1:8b`)
+- `LP_OLLAMA_TIMEOUT_SEC` (기본 `8`)
 
 ## Cloudflare Pages + AdSense 준비
 Streamlit 런타임과 별개로 심사용 정적 사이트를 `site/`에 추가했습니다.
@@ -235,6 +243,8 @@ python3 scripts/service_core_worklist.py
 python3 scripts/workflow_sla_snapshot.py
 python3 scripts/recommend_incidents.py
 python3 scripts/recommend_incidents.py --apply --owner auto-ops --actor auto-ops --actor-role operator
+python3 scripts/recommend_incidents.py --llm-provider ollama --ollama-healthz
+python3 scripts/recommend_incidents.py --llm-provider ollama --apply --owner auto-ops --actor auto-ops --actor-role operator
 ```
 
 ## Docker 실행
