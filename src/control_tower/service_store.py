@@ -12,6 +12,7 @@ from pathlib import Path
 from typing import Dict, List, Tuple
 
 from .config import SERVICE_DB_PATH
+from .incident_llm import enrich_incident_recommendations, resolve_incident_llm_settings
 
 PERMISSIONS = {
     "admin": {"queue_update", "incident_manage", "user_manage", "view"},
@@ -1473,10 +1474,39 @@ def incident_recommendations_from_metrics(
     return recommendations[:max_items]
 
 
-def derive_incident_recommendations(path: Path = SERVICE_DB_PATH, max_items: int = 5) -> List[Dict[str, object]]:
+def derive_incident_recommendations(
+    path: Path = SERVICE_DB_PATH,
+    max_items: int = 5,
+    *,
+    llm_provider: str | None = None,
+    ollama_base_url: str | None = None,
+    ollama_model: str | None = None,
+    ollama_timeout_sec: float | None = None,
+    fail_on_llm_error: bool = False,
+) -> List[Dict[str, object]]:
     queue_summary = fetch_queue_summary(path=path)
     ops_health = fetch_ops_health(path=path)
-    return incident_recommendations_from_metrics(queue_summary=queue_summary, ops_health=ops_health, max_items=max_items)
+    recommendations = incident_recommendations_from_metrics(
+        queue_summary=queue_summary,
+        ops_health=ops_health,
+        max_items=max_items,
+    )
+    runtime = resolve_incident_llm_settings(
+        llm_provider=llm_provider,
+        ollama_base_url=ollama_base_url,
+        ollama_model=ollama_model,
+        ollama_timeout_sec=ollama_timeout_sec,
+    )
+    return enrich_incident_recommendations(
+        recommendations=recommendations,
+        queue_summary=queue_summary,
+        ops_health=ops_health,
+        llm_provider=str(runtime["provider"]),
+        ollama_base_url=str(runtime["ollama_base_url"]),
+        ollama_model=str(runtime["ollama_model"]),
+        ollama_timeout_sec=float(runtime["ollama_timeout_sec"]),
+        fail_on_llm_error=fail_on_llm_error,
+    )
 
 
 def update_queue_action(
