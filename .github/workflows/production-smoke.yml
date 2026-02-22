@@ -28,7 +28,47 @@ jobs:
       - name: Smoke test production endpoints
         run: |
           set -euo pipefail
-          base="https://the-logistics-prophet.pages.dev"
+          candidate_bases=(
+            "${PROD_SMOKE_BASE_URL:-https://logistics-prophet.pages.dev}"
+            "https://the-logistics-prophet.pages.dev"
+          )
+          bases=()
+          for candidate in "${candidate_bases[@]}"; do
+            [ -n "$candidate" ] || continue
+            seen=0
+            for existing in "${bases[@]:-}"; do
+              if [ "$existing" = "$candidate" ]; then
+                seen=1
+                break
+              fi
+            done
+            if [ "$seen" -eq 0 ]; then
+              bases+=("$candidate")
+            fi
+          done
+
+          base=""
+          for candidate in "${bases[@]}"; do
+            for attempt in 1 2 3; do
+              code=$(curl -s -o /dev/null -w "%{http_code}" --max-time 20 "$candidate/" || true)
+              echo "[$attempt/3] probe $candidate/ -> $code"
+              if [ "$code" -ge 200 ] && [ "$code" -lt 400 ]; then
+                base="$candidate"
+                break
+              fi
+              sleep 2
+            done
+            if [ -n "$base" ]; then
+              break
+            fi
+          done
+
+          if [ -z "$base" ]; then
+            echo "No healthy production base found"
+            exit 1
+          fi
+          echo "Using production base: $base"
+
           paths=(
             "/"
             "/about.html"
@@ -44,7 +84,7 @@ jobs:
           for path in "${paths[@]}"; do
             ok=0
             for attempt in 1 2 3; do
-              code=$(curl -sS -o /dev/null -w "%{http_code}" --max-time 20 "$base$path")
+              code=$(curl -s -o /dev/null -w "%{http_code}" --max-time 20 "$base$path" || true)
               echo "[$attempt/3] $path -> $code"
               if [ "$code" -ge 200 ] && [ "$code" -lt 400 ]; then
                 ok=1
