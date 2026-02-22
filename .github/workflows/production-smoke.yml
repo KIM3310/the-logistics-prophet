@@ -29,8 +29,8 @@ jobs:
         run: |
           set -euo pipefail
           candidate_bases=(
-            "${PROD_SMOKE_BASE_URL:-https://logistics-prophet.pages.dev}"
-            "https://the-logistics-prophet.pages.dev"
+            "${PROD_SMOKE_BASE_URL:-https://the-logistics-prophet.pages.dev}"
+            "https://logistics-prophet.pages.dev"
           )
           bases=()
           for candidate in "${candidate_bases[@]}"; do
