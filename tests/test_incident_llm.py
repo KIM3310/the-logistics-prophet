@@ -5,14 +5,15 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-import requests
-
 ROOT = Path(__file__).resolve().parents[1]
 SRC = ROOT / "src"
 if str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
 
+import control_tower.incident_llm as incident_llm
 from control_tower.incident_llm import enrich_incident_recommendations, resolve_incident_llm_settings
+
+requests = incident_llm.requests
 
 
 class _FakeResponse:

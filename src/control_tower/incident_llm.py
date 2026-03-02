@@ -3,8 +3,114 @@ from __future__ import annotations
 import json
 import os
 from typing import Dict, List, Optional
+import urllib.error
+import urllib.request
 
-import requests
+
+class _CompatResponse:
+    def __init__(self, *, status_code: int, content: bytes, reason: str = "") -> None:
+        self.status_code = int(status_code)
+        self.content = content
+        self.reason = str(reason or "").strip()
+
+    def raise_for_status(self) -> None:
+        if self.status_code >= 400:
+            reason = f" {self.reason}" if self.reason else ""
+            raise _RequestsCompat.HTTPError(f"http_{self.status_code}{reason}")
+
+    def json(self) -> Dict[str, object]:
+        if not self.content:
+            return {}
+        decoded = self.content.decode("utf-8", errors="replace").strip()
+        if not decoded:
+            return {}
+        payload = json.loads(decoded)
+        if isinstance(payload, dict):
+            return payload
+        raise ValueError("json_object_required")
+
+
+class _RequestsCompat:
+    class RequestException(RuntimeError):
+        pass
+
+    class HTTPError(RequestException):
+        pass
+
+    @classmethod
+    def _request(
+        cls,
+        *,
+        method: str,
+        url: str,
+        headers: Optional[Dict[str, str]] = None,
+        body: Optional[bytes] = None,
+        timeout: float = 8.0,
+    ) -> _CompatResponse:
+        request = urllib.request.Request(
+            url=url,
+            data=body,
+            method=method.upper(),
+            headers=headers or {},
+        )
+        safe_timeout = max(1.0, float(timeout or 8.0))
+        try:
+            with urllib.request.urlopen(request, timeout=safe_timeout) as resp:
+                status = int(getattr(resp, "status", resp.getcode()))
+                content = resp.read()
+                reason = str(getattr(resp, "reason", "") or "")
+                return _CompatResponse(status_code=status, content=content, reason=reason)
+        except urllib.error.HTTPError as exc:
+            content = exc.read() if hasattr(exc, "read") else b""
+            reason = str(getattr(exc, "reason", "") or "")
+            return _CompatResponse(status_code=int(exc.code), content=content, reason=reason)
+        except (urllib.error.URLError, OSError, ValueError) as exc:
+            raise cls.RequestException(str(exc)) from exc
+
+    @classmethod
+    def get(
+        cls,
+        url: str,
+        *,
+        timeout: float = 8.0,
+        headers: Optional[Dict[str, str]] = None,
+    ) -> _CompatResponse:
+        return cls._request(method="GET", url=url, headers=headers, body=None, timeout=timeout)
+
+    @classmethod
+    def post(
+        cls,
+        url: str,
+        *,
+        json: Optional[Dict[str, object]] = None,
+        data: object = None,
+        headers: Optional[Dict[str, str]] = None,
+        timeout: float = 8.0,
+    ) -> _CompatResponse:
+        request_headers = dict(headers or {})
+        body: bytes
+        if json is not None:
+            request_headers.setdefault("Content-Type", "application/json")
+            body = json_dumps_compact(json).encode("utf-8")
+        elif data is None:
+            body = b""
+        elif isinstance(data, (bytes, bytearray)):
+            body = bytes(data)
+        else:
+            body = str(data).encode("utf-8")
+        return cls._request(method="POST", url=url, headers=request_headers, body=body, timeout=timeout)
+
+
+def json_dumps_compact(payload: object) -> str:
+    return json.dumps(payload, ensure_ascii=True, separators=(",", ":"))
+
+
+try:  # pragma: no cover - exercised when dependency exists
+    import requests as _requests  # type: ignore[import-not-found]
+except ModuleNotFoundError:  # pragma: no cover - exercised in minimal env
+    _requests = None
+
+requests = _requests if _requests is not None else _RequestsCompat
 
 DEFAULT_LLM_PROVIDER = "stub"
 DEFAULT_OLLAMA_BASE_URL = "http://127.0.0.1:11434"
@@ -145,7 +251,7 @@ def _build_ollama_prompt(
         "Write a concise incident operator brief in English. "
         "Return 2-3 short sentences: (1) immediate action, (2) owner/escalation, (3) verification step. "
         "No markdown.\n\n"
-        + json.dumps(compact, ensure_ascii=True)
+        + json_dumps_compact(compact)
     )
 
 
@@ -216,25 +322,13 @@ def enrich_incident_recommendations(
         provider = DEFAULT_LLM_PROVIDER
 
     enriched: List[Dict[str, object]] = []
+    provider_error: Optional[str] = None
     for recommendation in recommendations:
         item = dict(recommendation)
         if provider == "ollama":
-            try:
-                brief = _generate_ollama_brief(
-                    recommendation=item,
-                    queue_summary=queue_summary,
-                    ops_health=ops_health,
-                    base_url=ollama_base_url,
-                    model=ollama_model,
-                    timeout_sec=ollama_timeout_sec,
-                )
-                item["operator_brief"] = brief
-                item["llm_provider"] = "ollama"
-                item["llm_model"] = ollama_model
-                item["llm_enriched"] = True
-            except RuntimeError as exc:
-                if fail_on_llm_error:
-                    raise
+            skip_ollama = provider_error is not None and not fail_on_llm_error
+            if skip_ollama:
+                error_text = f"ollama_disabled_after_error: {provider_error}"
                 item["operator_brief"] = _build_stub_brief(
                     recommendation=item,
                     queue_summary=queue_summary,
@@ -243,7 +337,34 @@ def enrich_incident_recommendations(
                 item["llm_provider"] = "stub_fallback"
                 item["llm_model"] = "deterministic-template"
                 item["llm_enriched"] = False
-                item["llm_error"] = str(exc)
+                item["llm_error"] = error_text
+            else:
+                try:
+                    brief = _generate_ollama_brief(
+                        recommendation=item,
+                        queue_summary=queue_summary,
+                        ops_health=ops_health,
+                        base_url=ollama_base_url,
+                        model=ollama_model,
+                        timeout_sec=ollama_timeout_sec,
+                    )
+                    item["operator_brief"] = brief
+                    item["llm_provider"] = "ollama"
+                    item["llm_model"] = ollama_model
+                    item["llm_enriched"] = True
+                except RuntimeError as exc:
+                    if fail_on_llm_error:
+                        raise
+                    provider_error = str(exc)
+                    item["operator_brief"] = _build_stub_brief(
+                        recommendation=item,
+                        queue_summary=queue_summary,
+                        ops_health=ops_health,
+                    )
+                    item["llm_provider"] = "stub_fallback"
+                    item["llm_model"] = "deterministic-template"
+                    item["llm_enriched"] = False
+                    item["llm_error"] = provider_error
         else:
             item["operator_brief"] = _build_stub_brief(
                 recommendation=item,
