@@ -10,3 +10,6 @@ data/processed/
 data/output/
 data/model/
 data/semantic/
+
+# Debug artifacts
+.venv_*/
