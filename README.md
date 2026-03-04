@@ -271,3 +271,21 @@ python3 -m unittest discover -s tests -p 'test_*.py'
 - RDF: Resource Description Framework (semantic graph)
 - SPARQL: query language for RDF graphs
 - RBAC: Role-Based Access Control
+
+<!-- codex:local-verification:start -->
+## Local Verification
+```bash
+/Library/Developer/CommandLineTools/usr/bin/python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install -U pip
+python -m pip install -r requirements.txt
+python -m pip install pytest
+python -m pytest -q
+```
+
+## Repository Hygiene
+- Keep runtime artifacts out of commits (`.codex_runs/`, cache folders, temporary venvs).
+- Prefer running verification commands above before opening a PR.
+
+_Last updated: 2026-03-04_
+<!-- codex:local-verification:end -->
