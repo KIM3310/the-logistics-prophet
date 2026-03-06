@@ -68,6 +68,24 @@ def _worst_status(statuses: List[str]) -> str:
     return worst
 
 
+def _build_health_diagnostics(checks: List[Dict[str, Any]]) -> Dict[str, Any]:
+    failing_check_ids = [str(item.get("id", "")) for item in checks if item.get("status") == "fail"]
+    warning_check_ids = [str(item.get("id", "")) for item in checks if item.get("status") == "warn"]
+
+    if failing_check_ids:
+        next_action = f"Resolve {failing_check_ids[0]} and rerun `make health`."
+    elif warning_check_ids:
+        next_action = f"Review {warning_check_ids[0]} and rerun `make health` before release."
+    else:
+        next_action = "Run `python3 scripts/scenario_runner.py` to validate the end-to-end ops flow."
+
+    return {
+        "failing_check_ids": failing_check_ids,
+        "warning_check_ids": warning_check_ids,
+        "next_action": next_action,
+    }
+
+
 def _queue_csv_summary(path: Path) -> Dict[str, int]:
     if not path.exists():
         return {"row_count": 0, "unique_shipments": 0, "duplicate_rows": 0}
@@ -260,6 +278,7 @@ def build_service_health_report(
 
     statuses = [str(item.get("status", "pass")) for item in checks]
     overall_status = _worst_status(statuses)
+    diagnostics = _build_health_diagnostics(checks)
 
     return {
         "generated_at_utc": now.isoformat(),
@@ -272,6 +291,7 @@ def build_service_health_report(
             },
         },
         "overall_status": overall_status,
+        "diagnostics": diagnostics,
         "thresholds": {
             "max_pipeline_age_hours": float(max_pipeline_age_hours),
             "min_model_auc": float(min_model_auc),

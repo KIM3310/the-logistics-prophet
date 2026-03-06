@@ -38,6 +38,10 @@ class TestServiceHealth(unittest.TestCase):
         self.assertIn("artifacts", report["service_meta"])
         self.assertIn("overall_status", report)
         self.assertIn(report.get("overall_status"), {"pass", "warn", "fail"})
+        self.assertIn("diagnostics", report)
+        self.assertIn("failing_check_ids", report["diagnostics"])
+        self.assertIn("warning_check_ids", report["diagnostics"])
+        self.assertIn("next_action", report["diagnostics"])
         self.assertIn("checks", report)
         self.assertTrue(isinstance(report.get("checks"), list))
 
