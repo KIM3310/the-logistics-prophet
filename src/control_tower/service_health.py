@@ -263,6 +263,14 @@ def build_service_health_report(
 
     return {
         "generated_at_utc": now.isoformat(),
+        "service_meta": {
+            "service": "the-logistics-prophet",
+            "artifacts": {
+                "queue_csv_rows": int(queue_csv.get("row_count", 0)),
+                "service_db_rows": db_queue_count,
+                "strict_queue_parity": bool(strict_queue_parity),
+            },
+        },
         "overall_status": overall_status,
         "thresholds": {
             "max_pipeline_age_hours": float(max_pipeline_age_hours),
@@ -286,4 +294,3 @@ def health_exit_code(report: Dict[str, Any], warn_as_error: bool = False) -> int
     if overall == "warn" and warn_as_error:
         return 2
     return 0
-
