@@ -4,4 +4,4 @@ Allow: /
 User-agent: *
 Allow: /
 
-Sitemap: https://logistics-prophet.pages.dev/sitemap.xml
+Sitemap: https://the-logistics-prophet.pages.dev/sitemap.xml
