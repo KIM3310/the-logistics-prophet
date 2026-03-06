@@ -33,6 +33,9 @@ class TestServiceHealth(unittest.TestCase):
             min_model_auc=0.50,
             strict_queue_parity=True,
         )
+        self.assertIn("service_meta", report)
+        self.assertEqual(report["service_meta"]["service"], "the-logistics-prophet")
+        self.assertIn("artifacts", report["service_meta"])
         self.assertIn("overall_status", report)
         self.assertIn(report.get("overall_status"), {"pass", "warn", "fail"})
         self.assertIn("checks", report)
@@ -63,4 +66,3 @@ class TestServiceHealth(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
-
