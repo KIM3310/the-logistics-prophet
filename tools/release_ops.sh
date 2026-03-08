@@ -32,6 +32,158 @@ IGNORE_GLOBS=(
 log() { printf '%s\n' "$*"; }
 err() { printf 'ERROR: %s\n' "$*" >&2; }
 
+has_rg() {
+  command -v rg >/dev/null 2>&1
+}
+
+normalize_search_args() {
+  local normalized=()
+  local skip_next=0
+  local arg
+  for arg in "$@"; do
+    if [[ $skip_next -eq 1 ]]; then
+      skip_next=0
+      continue
+    fi
+    if [[ "$arg" == "--glob" ]]; then
+      skip_next=1
+      continue
+    fi
+    normalized+=("$arg")
+  done
+  printf '%s\0' "${normalized[@]}"
+}
+
+list_matching_files() {
+  local pattern="$1"
+  shift
+
+  if has_rg; then
+    rg -l "$pattern" "$@"
+    return
+  fi
+
+  local normalized=()
+  while IFS= read -r -d '' item; do
+    normalized+=("$item")
+  done < <(normalize_search_args "$@")
+
+  grep -RIlE \
+    --binary-files=without-match \
+    --exclude-dir=.git \
+    --exclude-dir=node_modules \
+    --exclude-dir=dist \
+    --exclude-dir=.next \
+    --exclude-dir=build \
+    --exclude-dir=coverage \
+    --exclude='*.png' \
+    --exclude='*.jpg' \
+    --exclude='*.jpeg' \
+    --exclude='*.gif' \
+    --exclude='*.pdf' \
+    --exclude='*.md' \
+    --exclude='README*' \
+    "$pattern" \
+    "${normalized[@]}"
+}
+
+search_text() {
+  local pattern="$1"
+  shift
+
+  if has_rg; then
+    rg -n "$pattern" "$@"
+    return
+  fi
+
+  local normalized=()
+  while IFS= read -r -d '' item; do
+    normalized+=("$item")
+  done < <(normalize_search_args "$@")
+
+  grep -RInE \
+    --binary-files=without-match \
+    --exclude-dir=.git \
+    --exclude-dir=node_modules \
+    --exclude-dir=dist \
+    --exclude-dir=.next \
+    --exclude-dir=build \
+    --exclude-dir=coverage \
+    --exclude='*.png' \
+    --exclude='*.jpg' \
+    --exclude='*.jpeg' \
+    --exclude='*.gif' \
+    --exclude='*.pdf' \
+    "$pattern" \
+    "${normalized[@]}"
+}
+
+search_text_i() {
+  local pattern="$1"
+  shift
+
+  if has_rg; then
+    rg -n -i "$pattern" "$@"
+    return
+  fi
+
+  local normalized=()
+  while IFS= read -r -d '' item; do
+    normalized+=("$item")
+  done < <(normalize_search_args "$@")
+
+  grep -RInEi \
+    --binary-files=without-match \
+    --exclude-dir=.git \
+    --exclude-dir=node_modules \
+    --exclude-dir=dist \
+    --exclude-dir=.next \
+    --exclude-dir=build \
+    --exclude-dir=coverage \
+    --exclude='*.png' \
+    --exclude='*.jpg' \
+    --exclude='*.jpeg' \
+    --exclude='*.gif' \
+    --exclude='*.pdf' \
+    "$pattern" \
+    "${normalized[@]}"
+}
+
+search_web_text_i() {
+  local pattern="$1"
+  shift
+
+  if has_rg; then
+    rg -n -i "$pattern" "$@" --glob '*.{html,js,jsx,ts,tsx}'
+    return
+  fi
+
+  local targets=("$@")
+  local files=()
+  local target
+  for target in "${targets[@]}"; do
+    if [[ -f "$target" ]]; then
+      files+=("$target")
+      continue
+    fi
+    if [[ -d "$target" ]]; then
+      while IFS= read -r -d '' file; do
+        files+=("$file")
+      done < <(
+        find "$target" -type f \
+          \( -name '*.html' -o -name '*.js' -o -name '*.jsx' -o -name '*.ts' -o -name '*.tsx' \) \
+          -print0
+      )
+    fi
+  done
+
+  if [[ ${#files[@]} -eq 0 ]]; then
+    return 1
+  fi
+
+  grep -nEi "$pattern" "${files[@]}"
+}
+
 usage() {
   cat <<USAGE
 Usage:
@@ -99,10 +251,8 @@ apply_adsense() {
 
   local pub="${client#ca-pub-}"
   mapfile -t files < <(
-    rg -l "ca-pub-0000000000000000|ca-pub-xxxxxxxxxxxxxxxx|pub-0000000000000000|1234567890" \
-      "$ROOT" "${IGNORE_GLOBS[@]}" \
-      --glob '!*.md' \
-      --glob '!README*'
+    list_matching_files "ca-pub-0000000000000000|ca-pub-xxxxxxxxxxxxxxxx|pub-0000000000000000|1234567890" \
+      "$ROOT" "${IGNORE_GLOBS[@]}"
   )
 
   if [[ ${#files[@]} -eq 0 ]]; then
@@ -148,7 +298,7 @@ contains_any() {
   shift
   local pattern
   for pattern in "$@"; do
-    if rg -n -i "$pattern" "$target" >/dev/null 2>&1; then
+    if search_text_i "$pattern" "$target" >/dev/null 2>&1; then
       return 0
     fi
   done
@@ -159,15 +309,15 @@ check_robots_quality() {
   local path="$1"
   local fail=0
 
-  if ! rg -n "^User-agent:" "$path" >/dev/null; then
+  if ! search_text "^User-agent:" "$path" >/dev/null; then
     log "FAIL robots: missing User-agent"
     fail=1
   fi
-  if ! rg -n "^Allow:" "$path" >/dev/null; then
+  if ! search_text "^Allow:" "$path" >/dev/null; then
     log "FAIL robots: missing Allow"
     fail=1
   fi
-  if ! rg -n "^Sitemap:" "$path" >/dev/null; then
+  if ! search_text "^Sitemap:" "$path" >/dev/null; then
     log "FAIL robots: missing Sitemap"
     fail=1
   fi
@@ -232,31 +382,31 @@ check_index_discoverability() {
     return 0
   fi
 
-  if rg -n -i "privacy" "${scan_targets[@]}" --glob '*.{html,js,jsx,ts,tsx}' >/dev/null; then
+  if search_web_text_i "privacy" "${scan_targets[@]}" >/dev/null; then
     log "OK   homepage links privacy"
   else
     log "FAIL homepage links privacy"
     fail=1
   fi
-  if rg -n -i "terms" "${scan_targets[@]}" --glob '*.{html,js,jsx,ts,tsx}' >/dev/null; then
+  if search_web_text_i "terms" "${scan_targets[@]}" >/dev/null; then
     log "OK   homepage links terms"
   else
     log "FAIL homepage links terms"
     fail=1
   fi
-  if rg -n -i "contact" "${scan_targets[@]}" --glob '*.{html,js,jsx,ts,tsx}' >/dev/null; then
+  if search_web_text_i "contact" "${scan_targets[@]}" >/dev/null; then
     log "OK   homepage links contact"
   else
     log "FAIL homepage links contact"
     fail=1
   fi
-  if rg -n -i "compliance" "${scan_targets[@]}" --glob '*.{html,js,jsx,ts,tsx}' >/dev/null; then
+  if search_web_text_i "compliance" "${scan_targets[@]}" >/dev/null; then
     log "OK   homepage links compliance"
   else
     log "FAIL homepage links compliance"
     fail=1
   fi
-  if rg -n -i "about" "${scan_targets[@]}" --glob '*.{html,js,jsx,ts,tsx}' >/dev/null; then
+  if search_web_text_i "about" "${scan_targets[@]}" >/dev/null; then
     log "OK   homepage links about"
   else
     log "WARN homepage links about (recommended)"
@@ -290,8 +440,7 @@ check_contact_quality() {
     return 0
   fi
 
-  if rg -n -i "@[^[:space:]]+\\.(local|test)\\b|ops\\.local|team\\.local" "${scan_targets[@]}" \
-    --glob '*.{html,js,jsx,ts,tsx}' >/dev/null; then
+  if search_web_text_i "@[^[:space:]]+\\.(local|test)\\b|ops\\.local|team\\.local" "${scan_targets[@]}" >/dev/null; then
     log "FAIL contact quality: local/test address found"
     fail=1
   else
@@ -326,7 +475,7 @@ check_ad_separation_signal() {
     return 0
   fi
 
-  if rg -n -i "sponsored|ad slot|광고" "${scan_targets[@]}" --glob '*.{html,js,jsx,ts,tsx}' >/dev/null; then
+  if search_web_text_i "sponsored|ad slot|광고" "${scan_targets[@]}" >/dev/null; then
     log "OK   ad separation label signal"
   else
     log "FAIL ad separation label signal"
@@ -366,15 +515,15 @@ check_review() {
   check_contact_quality "$web_root" || fail=1
   check_ad_separation_signal "$web_root" || fail=1
 
-  if rg -n "google-adsense-account" "$ROOT" "${IGNORE_GLOBS[@]}" --glob '!*.md' >/dev/null; then
+  if search_text "google-adsense-account" "$ROOT" "${IGNORE_GLOBS[@]}" >/dev/null; then
     log "OK   adsense account meta"
   else
     log "FAIL adsense account meta"
     fail=1
   fi
 
-  if rg -n "ca-pub-0000000000000000|ca-pub-xxxxxxxxxxxxxxxx|pub-0000000000000000|data-ad-slot=\"1234567890\"|VITE_ADSENSE_SLOT=1234567890|NEXT_PUBLIC_ADSENSE_SLOT=1234567890" \
-    "$ROOT" "${IGNORE_GLOBS[@]}" --glob '!*.md' --glob '!README*' >/dev/null; then
+  if list_matching_files "ca-pub-0000000000000000|ca-pub-xxxxxxxxxxxxxxxx|pub-0000000000000000|data-ad-slot=\"1234567890\"|VITE_ADSENSE_SLOT=1234567890|NEXT_PUBLIC_ADSENSE_SLOT=1234567890" \
+    "$ROOT" "${IGNORE_GLOBS[@]}" >/dev/null; then
     if [[ "$STRICT_ADSENSE_VALUES" == "1" ]]; then
       log "FAIL placeholder AdSense values remain (STRICT_ADSENSE_VALUES=1)"
       fail=1
