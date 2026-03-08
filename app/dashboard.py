@@ -1164,6 +1164,21 @@ def render_service_readiness_panel(health_report: Dict[str, object]) -> None:
                 with focus_right:
                     st.code("\n".join(route_lines), language="text")
 
+                snapshot_lines = [
+                    "the-logistics-prophet focused reviewer snapshot",
+                    f"Health: {str(health_report.get('overall_status', 'unknown')).upper()}",
+                    f"Focus check: {focus_check}",
+                    f"Route mode: {focus_mode}",
+                    f"AUC floor: {float(approval_gate.get('model_auc_floor', 0.0)):.2f}",
+                    f"Queue parity: {str(proof_bundle.get('strict_queue_parity', False))}",
+                    f"Next action: {next_action}",
+                    "",
+                    "Focused routes",
+                    *[f"- {line}" for line in route_lines],
+                ]
+                st.markdown("**Focused Reviewer Snapshot**")
+                st.code("\n".join(snapshot_lines), language="text")
+
         if watchouts:
             st.caption("Watchouts")
             for item in watchouts:
