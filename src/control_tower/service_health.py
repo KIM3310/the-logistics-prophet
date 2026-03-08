@@ -365,6 +365,31 @@ def build_service_health_report(
                 "service_scripts": 8,
                 "test_files": 10,
             },
+            "review_pack": {
+                "contract": "logistics-control-review-pack-v1",
+                "headline": "Reviewer pack for the logistics worklist: queue parity, audit chain, action loop, and evidence exports in one surface.",
+                "proof_bundle": {
+                    "queue_csv_rows": int(queue_csv.get("row_count", 0)),
+                    "service_db_rows": db_queue_count,
+                    "strict_queue_parity": bool(strict_queue_parity),
+                    "audit_chain_checked": _safe_int(audit.get("checked", 0)),
+                },
+                "approval_gate": {
+                    "quality_gate_required": True,
+                    "model_auc_floor": float(min_model_auc),
+                    "queue_parity_required": bool(strict_queue_parity),
+                },
+                "trust_boundary": [
+                    "Synthetic queue generation, service-store ownership, and audit-chain verification stay within the local repo surface.",
+                    "Datadog exports and Ollama recommendations remain optional reviewer extensions rather than baseline runtime requirements.",
+                    "Evidence packs are downstream artifacts and should only be shared after queue parity plus audit-chain checks are green.",
+                ],
+                "review_sequence": [
+                    "Run `make health` and confirm pipeline freshness, quality gate, model AUC, queue parity, and audit chain.",
+                    "Open Control Tower Brief, then validate actionability in Worklist and Queue + Update.",
+                    "Inspect Governance and Evidence Pack before approving downstream review or export.",
+                ],
+            },
         },
         "overall_status": overall_status,
         "diagnostics": diagnostics,
