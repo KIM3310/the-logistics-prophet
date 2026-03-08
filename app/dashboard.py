@@ -1123,6 +1123,21 @@ def render_service_readiness_panel(health_report: Dict[str, object]) -> None:
                             line += f" - {why}"
                         st.markdown(line)
 
+            reviewer_fast_path = [
+                ("Health Audit", "Run `make health` before reading the queue surface."),
+                ("Control Tower", "Validate queue parity and current actionability in the main worklist."),
+                ("Evidence Pack", "Check reviewer artifacts before exporting downstream claims."),
+                ("Audit Chain", "Confirm downstream handoff only after audit integrity stays green."),
+            ]
+            st.markdown("**Reviewer Fast Path**")
+            fast_left, fast_right = st.columns(2)
+            with fast_left:
+                for label, guidance in reviewer_fast_path[:2]:
+                    st.markdown(f"- **{label}**: {guidance}")
+            with fast_right:
+                for label, guidance in reviewer_fast_path[2:]:
+                    st.markdown(f"- **{label}**: {guidance}")
+
         if watchouts:
             st.caption("Watchouts")
             for item in watchouts:
