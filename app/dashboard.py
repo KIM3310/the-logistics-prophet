@@ -1086,6 +1086,7 @@ def render_service_readiness_panel(health_report: Dict[str, object]) -> None:
             c1, c2, c3 = st.columns(3)
             proof_bundle = review_pack.get("proof_bundle", {}) if isinstance(review_pack, dict) else {}
             approval_gate = review_pack.get("approval_gate", {}) if isinstance(review_pack, dict) else {}
+            diagnostics = health_report.get("diagnostics", {}) if isinstance(health_report, dict) else {}
             with c1:
                 st.metric("Review Contract", str(review_pack.get("contract", "-")))
             with c2:
@@ -1137,6 +1138,31 @@ def render_service_readiness_panel(health_report: Dict[str, object]) -> None:
             with fast_right:
                 for label, guidance in reviewer_fast_path[2:]:
                     st.markdown(f"- **{label}**: {guidance}")
+
+            failing_ids = diagnostics.get("failing_check_ids", []) if isinstance(diagnostics, dict) else []
+            warning_ids = diagnostics.get("warning_check_ids", []) if isinstance(diagnostics, dict) else []
+            focus_check = (
+                str(failing_ids[0])
+                if failing_ids
+                else str(warning_ids[0])
+                if warning_ids
+                else "release_ready"
+            )
+            focus_mode = "Fail-first" if failing_ids else "Warn-first" if warning_ids else "Release-ready"
+            next_action = str(diagnostics.get("next_action", "Review worklist and evidence pack.")).strip()
+            route_lines = []
+            for item in review_assets[:4]:
+                if isinstance(item, dict):
+                    route_lines.append(f"{item.get('label', '-')}: {item.get('path', '-')}")
+            if route_lines:
+                st.markdown("**Focused Reviewer Route**")
+                focus_left, focus_right = st.columns([0.9, 1.1])
+                with focus_left:
+                    st.metric("Focus Check", focus_check)
+                    st.metric("Route Mode", focus_mode)
+                    st.caption(next_action)
+                with focus_right:
+                    st.code("\n".join(route_lines), language="text")
 
         if watchouts:
             st.caption("Watchouts")
