@@ -193,6 +193,12 @@ python3 scripts/scenario_runner.py --out-dir /tmp/lp-scenario
 - `verdict.json` (pipeline/quality/audit 결과)
 - `logistics-prophet-evidence-pack-*.zip` (SHA-256 manifest 포함)
 
+## Service-Grade Surfaces
+- Streamlit `Control Tower` 첫 화면에 `Control Tower Brief` 패널이 표시됩니다.
+- `make health` / `python3 scripts/service_health_audit.py --warn-as-error` 로 pipeline, quality, model, queue parity, audit chain을 함께 검증합니다.
+- `logistics-worklist-report-v1` 계약으로 executive summary, queue snapshot, SLA health, operator actions, audit status를 같은 언어로 묶습니다.
+- reviewer flow: `health -> Control Tower Brief -> Worklist -> Governance -> Evidence Pack`
+
 ## 주요 산출물
 - `data/model/model_artifact.json`
 - `data/model/selected_model.pkl`
