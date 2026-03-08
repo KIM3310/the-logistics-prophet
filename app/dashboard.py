@@ -20,10 +20,11 @@ SRC = ROOT / "src"
 if str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
 
-from control_tower.config import SERVICE_DB_PATH
+from control_tower.config import PIPELINE_STATUS_PATH, SERVICE_DB_PATH
 from control_tower.data_access import fetch_shipment_feature_row
 from control_tower.evidence_pack import build_evidence_pack_bytes
 from control_tower.semantic_queries import load_instance_graph, query_shipment_evidence
+from control_tower.service_health import build_service_health_report
 from control_tower.service_store import (
     allowed_next_statuses,
     authenticate_user_with_status,
@@ -1028,6 +1029,55 @@ def render_ops_health_panel(service_summary: Dict[str, object], ops_health: Dict
         if not owner_df.empty:
             st.caption("Owner Load")
             st.dataframe(owner_df, use_container_width=True, height=180)
+
+
+def render_service_readiness_panel(health_report: Dict[str, object]) -> None:
+    service_meta = health_report.get("service_meta", {}) if isinstance(health_report, dict) else {}
+    artifacts = service_meta.get("artifacts", {}) if isinstance(service_meta, dict) else {}
+    report_contract = service_meta.get("report_contract", {}) if isinstance(service_meta, dict) else {}
+    summary = health_report.get("summary", {}) if isinstance(health_report, dict) else {}
+    review_flow = service_meta.get("review_flow", []) if isinstance(service_meta, dict) else []
+    operator_rules = service_meta.get("operator_rules", []) if isinstance(service_meta, dict) else []
+    watchouts = service_meta.get("watchouts", []) if isinstance(service_meta, dict) else []
+    stages = service_meta.get("stages", []) if isinstance(service_meta, dict) else []
+
+    with panel(
+        "Control Tower Brief",
+        caption="Review this first to understand the trust boundary, action loop, and reporting contract.",
+    ):
+        c1, c2, c3, c4 = st.columns(4)
+        with c1:
+            st.metric("Health", str(health_report.get("overall_status", "unknown")).upper())
+        with c2:
+            st.metric("Checks", int(summary.get("total_checks", 0)))
+        with c3:
+            st.metric("Report Schema", str(report_contract.get("schema", "-")))
+        with c4:
+            st.metric("Queue Rows", int(artifacts.get("queue_csv_rows", 0)))
+
+        headline = str(service_meta.get("headline", "")).strip()
+        if headline:
+            st.caption(headline)
+
+        left, right = st.columns([1.1, 1])
+        with left:
+            st.markdown("**Review Flow**")
+            for item in review_flow:
+                st.markdown(f"- {item}")
+        with right:
+            st.markdown("**Operator Rules**")
+            for item in operator_rules:
+                st.markdown(f"- {item}")
+
+        if stages:
+            stage_df = pd.DataFrame(stages)
+            st.caption("Service Stages")
+            st.dataframe(stage_df, use_container_width=True, height=220)
+
+        if watchouts:
+            st.caption("Watchouts")
+            for item in watchouts:
+                st.markdown(f"- {item}")
 
 
 def render_quality_details_panel(quality: Dict[str, object]) -> None:
@@ -2284,6 +2334,10 @@ def main() -> None:
         ops_health = fetch_ops_health(SERVICE_DB_PATH)
         core_snapshot = fetch_service_core_snapshot(SERVICE_DB_PATH)
         workflow_sla = fetch_workflow_sla_snapshot(SERVICE_DB_PATH)
+        health_report = build_service_health_report(
+            pipeline_status_path=PIPELINE_STATUS_PATH,
+            strict_queue_parity=True,
+        )
 
         render_hero(
             metrics,
@@ -2312,6 +2366,7 @@ def main() -> None:
 4. Use **Incidents** when suggestions trigger or risk grows.
                 """.strip()
             )
+        render_service_readiness_panel(health_report)
         render_service_core_board(core_snapshot)
         c1, c2 = st.columns([1.15, 1])
         with c1:

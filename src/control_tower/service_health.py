@@ -17,6 +17,71 @@ from .service_store import verify_audit_chain
 
 STATUS_ORDER = {"pass": 0, "warn": 1, "fail": 2}
 
+SERVICE_STAGES = [
+    {
+        "id": "sense",
+        "title": "Sense",
+        "owner": "pipeline",
+        "outcome": "Synthetic demand/logistics signals are rebuilt into a daily risk queue.",
+    },
+    {
+        "id": "score",
+        "title": "Score",
+        "owner": "modeling",
+        "outcome": "Baseline/challenger evaluation and calibrated risk ranking stay reviewable.",
+    },
+    {
+        "id": "explain",
+        "title": "Explain",
+        "owner": "semantic-layer",
+        "outcome": "SHAP drivers and SPARQL evidence justify why a shipment is risky.",
+    },
+    {
+        "id": "operate",
+        "title": "Operate",
+        "owner": "service-store",
+        "outcome": "Owners, statuses, incidents, and audit-trail updates flow through the control tower.",
+    },
+    {
+        "id": "govern",
+        "title": "Govern",
+        "owner": "monitoring",
+        "outcome": "Datadog exports, evidence packs, and health checks keep the surface production-like.",
+    },
+]
+
+REVIEW_FLOW = [
+    "Run `make health` to confirm the pipeline, quality gate, model threshold, and audit chain.",
+    "Open the Streamlit control tower and start with Core Board plus Next Actions.",
+    "Use Worklist and Queue + Update to verify actionability, ownership, and ETA transitions.",
+    "Inspect Evidence Pack / Governance to validate auditability and review artifacts.",
+]
+
+OPERATOR_RULES = [
+    "Queue parity and audit-chain integrity are not optional; they gate trust in the console.",
+    "Keep predictive signal, human ownership, and incident state transitions on the same screen.",
+    "Treat SHAP/SPARQL evidence as justification surfaces, not decoration.",
+]
+
+WATCHOUTS = [
+    "Synthetic data keeps the project reproducible, but it cannot prove real carrier integration latency.",
+    "The dashboard is Streamlit-first, so multi-user concurrency is demonstrated through the service store rather than a web API tier.",
+    "Datadog and Ollama integrations are optional and should be read as extensions, not baseline requirements.",
+]
+
+REPORT_CONTRACT = {
+    "schema": "logistics-worklist-report-v1",
+    "required_sections": [
+        "executive_summary",
+        "queue_snapshot",
+        "sla_health",
+        "top_risks",
+        "operator_actions",
+        "audit_status",
+    ],
+    "export_formats": ["markdown", "zip-evidence-pack", "datadog-snapshot"],
+}
+
 
 def _read_json(path: Path) -> Dict[str, Any]:
     if not path.exists():
@@ -284,10 +349,21 @@ def build_service_health_report(
         "generated_at_utc": now.isoformat(),
         "service_meta": {
             "service": "the-logistics-prophet",
+            "readiness_contract": "logistics-control-brief-v1",
+            "headline": "Predictive logistics control tower with evidence-backed worklist, governance, and audit surfaces.",
+            "review_flow": REVIEW_FLOW,
+            "operator_rules": OPERATOR_RULES,
+            "watchouts": WATCHOUTS,
+            "stages": SERVICE_STAGES,
+            "report_contract": REPORT_CONTRACT,
             "artifacts": {
                 "queue_csv_rows": int(queue_csv.get("row_count", 0)),
                 "service_db_rows": db_queue_count,
                 "strict_queue_parity": bool(strict_queue_parity),
+                "docs": 3,
+                "monitoring_assets": 2,
+                "service_scripts": 8,
+                "test_files": 10,
             },
         },
         "overall_status": overall_status,
