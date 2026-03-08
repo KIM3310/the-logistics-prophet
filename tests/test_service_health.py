@@ -46,6 +46,8 @@ class TestServiceHealth(unittest.TestCase):
         self.assertIn("artifacts", report["service_meta"])
         self.assertIn("proof_assets", report["service_meta"])
         self.assertEqual(report["service_meta"]["proof_assets"][0]["label"], "Health Audit")
+        self.assertIn("why", report["service_meta"]["proof_assets"][0])
+        self.assertIn("why", report["service_meta"]["review_pack"]["proof_assets"][0])
         self.assertIn("overall_status", report)
         self.assertIn(report.get("overall_status"), {"pass", "warn", "fail"})
         self.assertIn("diagnostics", report)

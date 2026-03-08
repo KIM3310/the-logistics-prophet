@@ -201,16 +201,16 @@ python3 scripts/scenario_runner.py --out-dir /tmp/lp-scenario
 - reviewer flow: `health -> Control Tower Brief -> Worklist -> Governance -> Evidence Pack`
 
 ## 2-Minute Review Path
-- `make health`
-- `Control Tower Brief`
-- `Worklist` or `Queue + Update`
-- `Governance` or `Evidence Pack`
+- `make health`로 pipeline freshness, model floor, queue parity, audit chain을 먼저 확인합니다.
+- `Control Tower Brief`에서 report contract, watchouts, review flow를 읽고 현재 운영 posture를 파악합니다.
+- `Worklist` 또는 `Queue + Update`에서 실제 operator actionability와 lot-at-risk 흐름을 확인합니다.
+- `Governance` 또는 `Evidence Pack`에서 reviewer handoff 전 증거와 승인 경계를 점검합니다.
 
 ## Proof Assets
-- `make health`
-- `app/dashboard.py`
-- `scripts/scenario_runner.py`
-- `scripts/verify_audit.py`
+- `make health`: pipeline freshness, quality gate, queue parity, audit integrity를 한 번에 확인합니다.
+- `app/dashboard.py`: Control Tower Brief, Worklist, Governance, Executive Review Pack을 같은 화면에서 보여줍니다.
+- `scripts/scenario_runner.py`: representative logistics replay와 export-ready evidence를 생성합니다.
+- `scripts/verify_audit.py`: audit chain이 export 전에 끊기지 않았는지 검증합니다.
 
 ## 주요 산출물
 - `data/model/model_artifact.json`
