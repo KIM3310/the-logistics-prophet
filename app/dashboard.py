@@ -1099,9 +1099,12 @@ def render_service_readiness_panel(health_report: Dict[str, object]) -> None:
 
             left_review, right_review = st.columns(2)
             with left_review:
+                review_two_minute = review_pack.get("two_minute_review", []) if isinstance(review_pack, dict) else []
+                if review_two_minute:
+                    st.markdown("**2-Minute Review**")
+                    for item in review_two_minute:
+                        st.markdown(f"- {item}")
                 st.markdown("**Review Sequence**")
-                for item in review_pack.get("two_minute_review", []):
-                    st.markdown(f"- 2-minute: {item}")
                 for item in review_pack.get("review_sequence", []):
                     st.markdown(f"- {item}")
             with right_review:
@@ -1114,7 +1117,11 @@ def render_service_readiness_panel(health_report: Dict[str, object]) -> None:
                 st.markdown("**Proof Assets**")
                 for item in review_assets:
                     if isinstance(item, dict):
-                        st.markdown(f"- {item.get('label', '-')}: `{item.get('path', '-')}`")
+                        why = str(item.get("why", "")).strip()
+                        line = f"- {item.get('label', '-')}: `{item.get('path', '-')}`"
+                        if why:
+                            line += f" - {why}"
+                        st.markdown(line)
 
         if watchouts:
             st.caption("Watchouts")
@@ -1125,7 +1132,11 @@ def render_service_readiness_panel(health_report: Dict[str, object]) -> None:
             st.caption("Proof Assets")
             for item in proof_assets:
                 if isinstance(item, dict):
-                    st.markdown(f"- {item.get('label', '-')}: `{item.get('path', '-')}`")
+                    why = str(item.get("why", "")).strip()
+                    line = f"- {item.get('label', '-')}: `{item.get('path', '-')}`"
+                    if why:
+                        line += f" - {why}"
+                    st.markdown(line)
 
 
 def render_quality_details_panel(quality: Dict[str, object]) -> None:
