@@ -1035,6 +1035,7 @@ def render_service_readiness_panel(health_report: Dict[str, object]) -> None:
     service_meta = health_report.get("service_meta", {}) if isinstance(health_report, dict) else {}
     artifacts = service_meta.get("artifacts", {}) if isinstance(service_meta, dict) else {}
     report_contract = service_meta.get("report_contract", {}) if isinstance(service_meta, dict) else {}
+    review_pack = service_meta.get("review_pack", {}) if isinstance(service_meta, dict) else {}
     summary = health_report.get("summary", {}) if isinstance(health_report, dict) else {}
     review_flow = service_meta.get("review_flow", []) if isinstance(service_meta, dict) else []
     operator_rules = service_meta.get("operator_rules", []) if isinstance(service_meta, dict) else []
@@ -1073,6 +1074,32 @@ def render_service_readiness_panel(health_report: Dict[str, object]) -> None:
             stage_df = pd.DataFrame(stages)
             st.caption("Service Stages")
             st.dataframe(stage_df, use_container_width=True, height=220)
+
+        if review_pack:
+            st.caption("Executive Review Pack")
+            c1, c2, c3 = st.columns(3)
+            proof_bundle = review_pack.get("proof_bundle", {}) if isinstance(review_pack, dict) else {}
+            approval_gate = review_pack.get("approval_gate", {}) if isinstance(review_pack, dict) else {}
+            with c1:
+                st.metric("Review Contract", str(review_pack.get("contract", "-")))
+            with c2:
+                st.metric("Parity", str(proof_bundle.get("strict_queue_parity", False)))
+            with c3:
+                st.metric("AUC Floor", float(approval_gate.get("model_auc_floor", 0.0)))
+
+            headline = str(review_pack.get("headline", "")).strip()
+            if headline:
+                st.caption(headline)
+
+            left_review, right_review = st.columns(2)
+            with left_review:
+                st.markdown("**Review Sequence**")
+                for item in review_pack.get("review_sequence", []):
+                    st.markdown(f"- {item}")
+            with right_review:
+                st.markdown("**Trust Boundary**")
+                for item in review_pack.get("trust_boundary", []):
+                    st.markdown(f"- {item}")
 
         if watchouts:
             st.caption("Watchouts")

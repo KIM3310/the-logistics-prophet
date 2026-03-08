@@ -12,7 +12,7 @@ Last updated: 2026-03-08
 
 ## E - Execution
 - service health report에 readiness contract, report schema, stages, operator rules를 추가
-- Streamlit Control Tower에 `Control Tower Brief` 패널을 상단 배치
+- Streamlit Control Tower에 `Control Tower Brief` + `Executive Review Pack` 패널을 상단 배치
 - README에서 reviewer flow와 service-grade surface를 명시
 
 ## C - Criteria
@@ -20,6 +20,7 @@ Last updated: 2026-03-08
 - README 첫 부분에서 control-tower 가치가 설명됨
 - 주요 signal과 action mapping이 흔들리지 않음
 - health report와 dashboard copy가 같은 readiness 언어를 사용
+- review pack이 queue parity, audit chain, approval gate를 reviewer 언어로 다시 묶는다
 
 ## K - Keep
 - operations storytelling
