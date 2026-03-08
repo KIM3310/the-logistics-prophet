@@ -1038,9 +1038,11 @@ def render_service_readiness_panel(health_report: Dict[str, object]) -> None:
     review_pack = service_meta.get("review_pack", {}) if isinstance(service_meta, dict) else {}
     summary = health_report.get("summary", {}) if isinstance(health_report, dict) else {}
     review_flow = service_meta.get("review_flow", []) if isinstance(service_meta, dict) else []
+    two_minute_review = service_meta.get("two_minute_review", []) if isinstance(service_meta, dict) else []
     operator_rules = service_meta.get("operator_rules", []) if isinstance(service_meta, dict) else []
     watchouts = service_meta.get("watchouts", []) if isinstance(service_meta, dict) else []
     stages = service_meta.get("stages", []) if isinstance(service_meta, dict) else []
+    proof_assets = service_meta.get("proof_assets", []) if isinstance(service_meta, dict) else []
 
     with panel(
         "Control Tower Brief",
@@ -1065,6 +1067,10 @@ def render_service_readiness_panel(health_report: Dict[str, object]) -> None:
             st.markdown("**Review Flow**")
             for item in review_flow:
                 st.markdown(f"- {item}")
+            if two_minute_review:
+                st.markdown("**2-Minute Review**")
+                for item in two_minute_review:
+                    st.markdown(f"- {item}")
         with right:
             st.markdown("**Operator Rules**")
             for item in operator_rules:
@@ -1094,6 +1100,8 @@ def render_service_readiness_panel(health_report: Dict[str, object]) -> None:
             left_review, right_review = st.columns(2)
             with left_review:
                 st.markdown("**Review Sequence**")
+                for item in review_pack.get("two_minute_review", []):
+                    st.markdown(f"- 2-minute: {item}")
                 for item in review_pack.get("review_sequence", []):
                     st.markdown(f"- {item}")
             with right_review:
@@ -1101,10 +1109,23 @@ def render_service_readiness_panel(health_report: Dict[str, object]) -> None:
                 for item in review_pack.get("trust_boundary", []):
                     st.markdown(f"- {item}")
 
+            review_assets = review_pack.get("proof_assets", []) if isinstance(review_pack, dict) else []
+            if review_assets:
+                st.markdown("**Proof Assets**")
+                for item in review_assets:
+                    if isinstance(item, dict):
+                        st.markdown(f"- {item.get('label', '-')}: `{item.get('path', '-')}`")
+
         if watchouts:
             st.caption("Watchouts")
             for item in watchouts:
                 st.markdown(f"- {item}")
+
+        if proof_assets:
+            st.caption("Proof Assets")
+            for item in proof_assets:
+                if isinstance(item, dict):
+                    st.markdown(f"- {item.get('label', '-')}: `{item.get('path', '-')}`")
 
 
 def render_quality_details_panel(quality: Dict[str, object]) -> None:

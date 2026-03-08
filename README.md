@@ -200,6 +200,18 @@ python3 scripts/scenario_runner.py --out-dir /tmp/lp-scenario
 - `logistics-worklist-report-v1` 계약으로 executive summary, queue snapshot, SLA health, operator actions, audit status를 같은 언어로 묶습니다.
 - reviewer flow: `health -> Control Tower Brief -> Worklist -> Governance -> Evidence Pack`
 
+## 2-Minute Review Path
+- `make health`
+- `Control Tower Brief`
+- `Worklist` or `Queue + Update`
+- `Governance` or `Evidence Pack`
+
+## Proof Assets
+- `make health`
+- `app/dashboard.py`
+- `scripts/scenario_runner.py`
+- `scripts/verify_audit.py`
+
 ## 주요 산출물
 - `data/model/model_artifact.json`
 - `data/model/selected_model.pkl`
