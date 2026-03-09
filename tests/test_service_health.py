@@ -41,6 +41,18 @@ class TestServiceHealth(unittest.TestCase):
         self.assertTrue(isinstance(report["service_meta"].get("review_flow"), list))
         self.assertEqual(len(report["service_meta"].get("two_minute_review", [])), 4)
         self.assertTrue(isinstance(report["service_meta"].get("stages"), list))
+        self.assertEqual(
+            report["service_meta"]["review_summary"]["contract"],
+            "logistics-control-review-summary-v1",
+        )
+        self.assertEqual(
+            report["service_meta"]["review_summary"]["summary"]["queue_csv_rows"],
+            report["service_meta"]["artifacts"]["queue_csv_rows"],
+        )
+        self.assertIn(
+            "make health",
+            report["service_meta"]["review_summary"]["fastest_review_path"],
+        )
         self.assertTrue(isinstance(report["service_meta"]["review_pack"].get("review_sequence"), list))
         self.assertEqual(len(report["service_meta"]["review_pack"].get("two_minute_review", [])), 4)
         self.assertIn("artifacts", report["service_meta"])

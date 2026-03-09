@@ -151,6 +151,43 @@ def _build_health_diagnostics(checks: List[Dict[str, Any]]) -> Dict[str, Any]:
     }
 
 
+def _build_review_summary(
+    *,
+    checks: List[Dict[str, Any]],
+    queue_csv_rows: int,
+    db_queue_count: int,
+    audit_checked: int,
+    min_model_auc: float,
+    strict_queue_parity: bool,
+) -> Dict[str, Any]:
+    status_counts = {"pass": 0, "warn": 0, "fail": 0}
+    for item in checks:
+        status = str(item.get("status", "pass"))
+        if status in status_counts:
+            status_counts[status] += 1
+
+    return {
+        "contract": "logistics-control-review-summary-v1",
+        "headline": "Compact reviewer snapshot for queue parity, audit integrity, and operational actionability.",
+        "summary": {
+            "total_checks": len(checks),
+            "queue_csv_rows": queue_csv_rows,
+            "service_db_rows": db_queue_count,
+            "audit_chain_checked": audit_checked,
+            "min_model_auc": float(min_model_auc),
+            "strict_queue_parity": bool(strict_queue_parity),
+            "status_counts": status_counts,
+        },
+        "fastest_review_path": [
+            "make health",
+            "app/dashboard.py?page=control-tower",
+            "scripts/scenario_runner.py",
+            "scripts/verify_audit.py",
+        ],
+        "top_watchouts": WATCHOUTS[:2],
+    }
+
+
 def _queue_csv_summary(path: Path) -> Dict[str, int]:
     if not path.exists():
         return {"row_count": 0, "unique_shipments": 0, "duplicate_rows": 0}
@@ -397,6 +434,14 @@ def build_service_health_report(
                     "why": "Validates that downstream artifacts only move after the queue and audit chain stay consistent.",
                 },
             ],
+            "review_summary": _build_review_summary(
+                checks=checks,
+                queue_csv_rows=int(queue_csv.get("row_count", 0)),
+                db_queue_count=db_queue_count,
+                audit_checked=_safe_int(audit.get("checked", 0)),
+                min_model_auc=float(min_model_auc),
+                strict_queue_parity=bool(strict_queue_parity),
+            ),
             "review_pack": {
                 "contract": "logistics-control-review-pack-v1",
                 "headline": "Reviewer pack for the logistics worklist: queue parity, audit chain, action loop, and evidence exports in one surface.",
