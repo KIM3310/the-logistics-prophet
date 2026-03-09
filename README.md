@@ -196,6 +196,7 @@ python3 scripts/scenario_runner.py --out-dir /tmp/lp-scenario
 
 ## Service-Grade Surfaces
 - Streamlit `Control Tower` 첫 화면에 `Control Tower Brief` 패널이 표시됩니다.
+- 같은 화면에 `Runtime Scorecard`가 추가되어 runtime score, fail/warn counts, queue parity, audit checked를 압축해서 보여줍니다.
 - 같은 화면에 `Executive Review Pack`이 추가되어 queue parity, audit chain, approval gate, review sequence를 함께 보여줍니다.
 - `make health` / `python3 scripts/service_health_audit.py --warn-as-error` 로 pipeline, quality, model, queue parity, audit chain을 함께 검증합니다.
 - `logistics-worklist-report-v1` 계약으로 executive summary, queue snapshot, SLA health, operator actions, audit status를 같은 언어로 묶습니다.
@@ -203,6 +204,7 @@ python3 scripts/scenario_runner.py --out-dir /tmp/lp-scenario
 
 ## 2-Minute Review Path
 - `make health`로 pipeline freshness, model floor, queue parity, audit chain을 먼저 확인합니다.
+- `Runtime Scorecard`에서 runtime score, fail/warn count, queue parity, audit checked를 먼저 훑습니다.
 - `Control Tower Brief`에서 report contract, watchouts, review flow를 읽고 현재 운영 posture를 파악합니다.
 - `Worklist` 또는 `Queue + Update`에서 실제 operator actionability와 lot-at-risk 흐름을 확인합니다.
 - `Governance` 또는 `Evidence Pack`에서 reviewer handoff 전 증거와 승인 경계를 점검합니다.
@@ -210,6 +212,7 @@ python3 scripts/scenario_runner.py --out-dir /tmp/lp-scenario
 ## Proof Assets
 - `make health`: pipeline freshness, quality gate, queue parity, audit integrity를 한 번에 확인합니다.
 - `app/dashboard.py`: Control Tower Brief, Worklist, Governance, Executive Review Pack을 같은 화면에서 보여줍니다.
+- `scripts/exercise_runtime_scorecard.py`: runtime scorecard payload를 재현해서 health posture를 빠르게 확인합니다.
 - `scripts/scenario_runner.py`: representative logistics replay와 export-ready evidence를 생성합니다.
 - `scripts/verify_audit.py`: audit chain이 export 전에 끊기지 않았는지 검증합니다.
 
@@ -300,6 +303,7 @@ source .venv/bin/activate
 python -m pip install -U pip
 python -m pip install -e ".[dev]"
 python -m pytest
+python scripts/exercise_runtime_scorecard.py
 ```
 
 ## Repository Hygiene

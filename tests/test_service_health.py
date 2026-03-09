@@ -49,6 +49,14 @@ class TestServiceHealth(unittest.TestCase):
             report["service_meta"]["review_summary"]["summary"]["queue_csv_rows"],
             report["service_meta"]["artifacts"]["queue_csv_rows"],
         )
+        self.assertEqual(
+            report["service_meta"]["runtime_scorecard"]["contract"],
+            "logistics-control-runtime-scorecard-v1",
+        )
+        self.assertGreaterEqual(
+            report["service_meta"]["runtime_scorecard"]["summary"]["runtime_score"],
+            40,
+        )
         self.assertIn(
             "make health",
             report["service_meta"]["review_summary"]["fastest_review_path"],
