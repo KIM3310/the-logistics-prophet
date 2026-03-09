@@ -188,6 +188,50 @@ def _build_review_summary(
     }
 
 
+def _build_runtime_scorecard(
+    *,
+    checks: List[Dict[str, Any]],
+    queue_csv_rows: int,
+    db_queue_count: int,
+    audit_checked: int,
+    min_model_auc: float,
+    strict_queue_parity: bool,
+) -> Dict[str, Any]:
+    status_counts = {"pass": 0, "warn": 0, "fail": 0}
+    for item in checks:
+        status = str(item.get("status", "pass"))
+        if status in status_counts:
+            status_counts[status] += 1
+
+    fail_count = int(status_counts["fail"])
+    warn_count = int(status_counts["warn"])
+    runtime_score = max(40, 100 - min(fail_count * 18 + warn_count * 6, 60))
+    top_failing = [str(item.get("id", "")) for item in checks if item.get("status") == "fail"][:3]
+    top_warning = [str(item.get("id", "")) for item in checks if item.get("status") == "warn"][:3]
+
+    return {
+        "contract": "logistics-control-runtime-scorecard-v1",
+        "headline": "Compact runtime scorecard for queue parity, model floor, and audit integrity before operator action.",
+        "summary": {
+            "runtime_score": runtime_score,
+            "queue_csv_rows": int(queue_csv_rows),
+            "service_db_rows": int(db_queue_count),
+            "audit_chain_checked": int(audit_checked),
+            "min_model_auc": float(min_model_auc),
+            "strict_queue_parity": bool(strict_queue_parity),
+            "status_counts": status_counts,
+        },
+        "top_failing_checks": top_failing,
+        "top_warning_checks": top_warning,
+        "fastest_review_path": [
+            "make health",
+            "app/dashboard.py?page=control-tower",
+            "scripts/service_core_snapshot.py",
+            "scripts/verify_audit.py",
+        ],
+    }
+
+
 def _queue_csv_summary(path: Path) -> Dict[str, int]:
     if not path.exists():
         return {"row_count": 0, "unique_shipments": 0, "duplicate_rows": 0}
@@ -435,6 +479,14 @@ def build_service_health_report(
                 },
             ],
             "review_summary": _build_review_summary(
+                checks=checks,
+                queue_csv_rows=int(queue_csv.get("row_count", 0)),
+                db_queue_count=db_queue_count,
+                audit_checked=_safe_int(audit.get("checked", 0)),
+                min_model_auc=float(min_model_auc),
+                strict_queue_parity=bool(strict_queue_parity),
+            ),
+            "runtime_scorecard": _build_runtime_scorecard(
                 checks=checks,
                 queue_csv_rows=int(queue_csv.get("row_count", 0)),
                 db_queue_count=db_queue_count,

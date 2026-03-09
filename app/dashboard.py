@@ -1036,6 +1036,7 @@ def render_service_readiness_panel(health_report: Dict[str, object]) -> None:
     artifacts = service_meta.get("artifacts", {}) if isinstance(service_meta, dict) else {}
     report_contract = service_meta.get("report_contract", {}) if isinstance(service_meta, dict) else {}
     review_pack = service_meta.get("review_pack", {}) if isinstance(service_meta, dict) else {}
+    runtime_scorecard = service_meta.get("runtime_scorecard", {}) if isinstance(service_meta, dict) else {}
     summary = health_report.get("summary", {}) if isinstance(health_report, dict) else {}
     review_flow = service_meta.get("review_flow", []) if isinstance(service_meta, dict) else []
     two_minute_review = service_meta.get("two_minute_review", []) if isinstance(service_meta, dict) else []
@@ -1190,6 +1191,30 @@ def render_service_readiness_panel(health_report: Dict[str, object]) -> None:
                 ]
                 st.markdown("**Focused SLA Snapshot**")
                 st.code("\n".join(sla_snapshot_lines), language="text")
+
+        if runtime_scorecard:
+            st.caption("Runtime Scorecard")
+            runtime_summary = runtime_scorecard.get("summary", {}) if isinstance(runtime_scorecard, dict) else {}
+            c1, c2, c3, c4 = st.columns(4)
+            with c1:
+                st.metric("Runtime Score", int(runtime_summary.get("runtime_score", 0)))
+            with c2:
+                st.metric("CSV Rows", int(runtime_summary.get("queue_csv_rows", 0)))
+            with c3:
+                st.metric("DB Rows", int(runtime_summary.get("service_db_rows", 0)))
+            with c4:
+                st.metric("Audit Checked", int(runtime_summary.get("audit_chain_checked", 0)))
+
+            scorecard_lines = [
+                f"Contract: {runtime_scorecard.get('contract', '-')}",
+                f"Runtime score: {int(runtime_summary.get('runtime_score', 0))}",
+                f"Queue parity strict: {bool(runtime_summary.get('strict_queue_parity', False))}",
+                f"Model AUC floor: {float(runtime_summary.get('min_model_auc', 0.0)):.2f}",
+                f"Fail checks: {int((runtime_summary.get('status_counts', {}) or {}).get('fail', 0))}",
+                f"Warn checks: {int((runtime_summary.get('status_counts', {}) or {}).get('warn', 0))}",
+            ]
+            st.markdown("**Runtime Scorecard Snapshot**")
+            st.code("\n".join(scorecard_lines), language="text")
 
         if watchouts:
             st.caption("Watchouts")
