@@ -1179,6 +1179,18 @@ def render_service_readiness_panel(health_report: Dict[str, object]) -> None:
                 st.markdown("**Focused Reviewer Snapshot**")
                 st.code("\n".join(snapshot_lines), language="text")
 
+                sla_snapshot_lines = [
+                    "the-logistics-prophet sla snapshot",
+                    f"Quality gate required: {str(approval_gate.get('quality_gate_required', False))}",
+                    f"AUC floor: {float(approval_gate.get('model_auc_floor', 0.0)):.2f}",
+                    f"Queue parity required: {str(approval_gate.get('queue_parity_required', False))}",
+                    f"Audit chain checked: {proof_bundle.get('audit_chain_checked', 0)}",
+                    f"Queue parity: {str(proof_bundle.get('strict_queue_parity', False))}",
+                    f"Next action: {next_action}",
+                ]
+                st.markdown("**Focused SLA Snapshot**")
+                st.code("\n".join(sla_snapshot_lines), language="text")
+
         if watchouts:
             st.caption("Watchouts")
             for item in watchouts:
