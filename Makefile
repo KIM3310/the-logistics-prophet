@@ -4,7 +4,10 @@ ifeq ($(wildcard $(VENV_PY)), $(VENV_PY))
 PYTHON := $(VENV_PY)
 endif
 
-.PHONY: run generate marts service-init users audit quality semantic train score report monitor health core-snapshot core-worklist workflow-sla incident-reco incident-reco-apply incident-reco-ollama datadog replay scenario test clean dashboard docker-build docker-up demo-local demo-local-kill demo-local-debug demo-local-open
+.PHONY: setup run generate marts service-init users audit quality semantic train score report monitor health core-snapshot core-worklist workflow-sla incident-reco incident-reco-apply incident-reco-ollama datadog replay scenario test clean dashboard docker-build docker-up demo-local demo-local-kill demo-local-debug demo-local-open
+
+setup:
+	python3 -m venv .venv && . .venv/bin/activate && python -m pip install -U pip && python -m pip install -e ".[dev]"
 
 run:
 	$(PYTHON) scripts/run_pipeline.py
