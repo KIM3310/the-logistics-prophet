@@ -92,7 +92,8 @@ the-logistics-prophet/
 cd the-logistics-prophet
 python3 -m venv .venv
 source .venv/bin/activate
-python3 -m pip install -r requirements.txt
+python3 -m pip install -U pip
+python3 -m pip install -e ".[dev]"
 python3 scripts/run_pipeline.py
 python3 -m streamlit run app/dashboard.py
 ```
@@ -297,9 +298,8 @@ python3 -m unittest discover -s tests -p 'test_*.py'
 /Library/Developer/CommandLineTools/usr/bin/python3 -m venv .venv
 source .venv/bin/activate
 python -m pip install -U pip
-python -m pip install -r requirements.txt
-python -m pip install pytest
-python -m pytest -q
+python -m pip install -e ".[dev]"
+python -m pytest
 ```
 
 ## Repository Hygiene
