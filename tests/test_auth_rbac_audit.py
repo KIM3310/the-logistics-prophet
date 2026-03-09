@@ -37,9 +37,21 @@ class TestAuthRbacAudit(unittest.TestCase):
             raise RuntimeError(f"Pipeline failed:\n{result.stdout}\n{result.stderr}")
 
     def test_default_users_can_authenticate(self) -> None:
-        admin = authenticate_user("admin", "admin123!", path=SERVICE_DB_PATH)
-        operator = authenticate_user("operator", "ops123!", path=SERVICE_DB_PATH)
-        viewer = authenticate_user("viewer", "view123!", path=SERVICE_DB_PATH)
+        admin = self._authenticate_with_candidates(
+            "admin",
+            [os.getenv("LP_DEMO_ADMIN_PASSWORD", "AdminOps!2026"), "admin123!"],
+            path=SERVICE_DB_PATH,
+        )
+        operator = self._authenticate_with_candidates(
+            "operator",
+            [os.getenv("LP_DEMO_OPERATOR_PASSWORD", "OperatorOps!2026"), "ops123!"],
+            path=SERVICE_DB_PATH,
+        )
+        viewer = self._authenticate_with_candidates(
+            "viewer",
+            [os.getenv("LP_DEMO_VIEWER_PASSWORD", "ViewerOps!2026"), "view123!"],
+            path=SERVICE_DB_PATH,
+        )
 
         self.assertIsNotNone(admin)
         self.assertIsNotNone(operator)
@@ -74,7 +86,11 @@ class TestAuthRbacAudit(unittest.TestCase):
         with tempfile.TemporaryDirectory(prefix="logistics_audit_chain_") as tmp:
             db_path = Path(tmp) / "service.db"
             init_service_store(path=db_path)
-            admin = authenticate_user("admin", "admin123!", path=db_path)
+            admin = self._authenticate_with_candidates(
+                "admin",
+                [os.getenv("LP_DEMO_ADMIN_PASSWORD", "AdminOps!2026"), "admin123!"],
+                path=db_path,
+            )
             self.assertIsNotNone(admin)
 
             conn = sqlite3.connect(db_path)
@@ -95,13 +111,33 @@ class TestAuthRbacAudit(unittest.TestCase):
             self.assertFalse(result.get("valid"))
             self.assertEqual(result.get("reason"), "invalid_payload_json")
 
+    @staticmethod
+    def _authenticate_with_candidates(username: str, candidates: list[str], *, path: Path):
+        for password in candidates:
+            user = authenticate_user(username, password, path=path)
+            if user is not None:
+                return user
+        return None
+
     def test_audit_chain_reports_unexpected_genesis_reset(self) -> None:
         with tempfile.TemporaryDirectory(prefix="logistics_audit_chain_reset_") as tmp:
             db_path = Path(tmp) / "service.db"
             init_service_store(path=db_path)
 
-            self.assertIsNotNone(authenticate_user("admin", "admin123!", path=db_path))
-            self.assertIsNotNone(authenticate_user("operator", "ops123!", path=db_path))
+            self.assertIsNotNone(
+                self._authenticate_with_candidates(
+                    "admin",
+                    [os.getenv("LP_DEMO_ADMIN_PASSWORD", "AdminOps!2026"), "admin123!"],
+                    path=db_path,
+                )
+            )
+            self.assertIsNotNone(
+                self._authenticate_with_candidates(
+                    "operator",
+                    [os.getenv("LP_DEMO_OPERATOR_PASSWORD", "OperatorOps!2026"), "ops123!"],
+                    path=db_path,
+                )
+            )
 
             conn = sqlite3.connect(db_path)
             try:
@@ -141,7 +177,11 @@ class TestAuthRbacAudit(unittest.TestCase):
                 self.assertEqual(int(second.get("attempts_remaining", -1)), 0)
                 self.assertTrue(str(second.get("locked_until", "")).strip())
 
-                blocked = authenticate_user_with_status("admin", "admin123!", path=db_path)
+                blocked = authenticate_user_with_status(
+                    "admin",
+                    os.getenv("LP_DEMO_ADMIN_PASSWORD", "AdminOps!2026"),
+                    path=db_path,
+                )
                 self.assertFalse(bool(blocked.get("ok")))
                 self.assertEqual(blocked.get("reason"), "account_locked")
             finally:

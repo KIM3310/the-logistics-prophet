@@ -98,10 +98,7 @@ python3 scripts/run_pipeline.py
 python3 -m streamlit run app/dashboard.py
 ```
 
-기본 로그인 계정:
-- `admin / admin123!`
-- `operator / ops123!`
-- `viewer / view123!`
+기본 로그인 계정은 local bootstrap 단계에서 생성되며, 초기 비밀번호는 환경 변수로 override 할 수 있습니다.
 
 보안/운영 옵션:
 - `LP_BOOTSTRAP_DEMO_USERS=0` 이면 기본 계정을 자동 생성하지 않습니다.

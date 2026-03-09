@@ -470,7 +470,7 @@ def render_login_gate() -> Dict[str, object]:
 
     if _env_flag("LP_SHOW_DEMO_CREDENTIALS", default=False):
         with st.expander("Demo Credentials"):
-            st.code("admin / admin123!\noperator / ops123!\nviewer / view123!")
+            st.code("admin / <configured locally>\noperator / <configured locally>\nviewer / <configured locally>")
     else:
         st.caption("Demo credential hints are hidden. Set `LP_SHOW_DEMO_CREDENTIALS=1` to display.")
 

@@ -36,9 +36,9 @@ python3 scripts/push_datadog.py --apply-dashboard --apply-monitors
 - `viewer`: read-only
 
 Default credentials:
-- `admin / admin123!`
-- `operator / ops123!`
-- `viewer / view123!`
+- `admin / <configured locally>`
+- `operator / <configured locally>`
+- `viewer / <configured locally>`
 
 Security toggles:
 - Disable demo bootstrap users: `LP_BOOTSTRAP_DEMO_USERS=0`
