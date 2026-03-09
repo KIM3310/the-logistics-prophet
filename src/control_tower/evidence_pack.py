@@ -53,9 +53,7 @@ def build_evidence_pack_bytes(
         ("docs/runbook.md", docs_dir / "runbook.md"),
         ("docs/postmortem_template.md", docs_dir / "postmortem_template.md"),
         ("docs/datadog_ingestion.md", docs_dir / "datadog_ingestion.md"),
-        ("specs/FLAGSHIP_V3_SPEC.md", specs_dir / "FLAGSHIP_V3_SPEC.md"),
         ("specs/PRODUCT_SPEC.md", specs_dir / "PRODUCT_SPEC.md"),
-        ("specs/SPECKIT_EXECUTION_PLAN.md", specs_dir / "SPECKIT_EXECUTION_PLAN.md"),
         ("ontology/supply_chain.ttl", ONTOLOGY_DIR / "supply_chain.ttl"),
         ("ontology/competency_questions.md", ONTOLOGY_DIR / "competency_questions.md"),
         ("monitoring/datadog_dashboard.json", MONITORING_DIR / "datadog_dashboard.json"),
@@ -106,4 +104,3 @@ def build_evidence_pack_bytes(
 
     filename = f"logistics-prophet-evidence-pack-{datetime.now(timezone.utc).strftime('%Y%m%d-%H%M%S')}.zip"
     return filename, buf.getvalue()
-
