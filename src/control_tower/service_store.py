@@ -408,9 +408,9 @@ def _ensure_default_users(conn: sqlite3.Connection) -> None:
 
     now = utc_now_iso()
     defaults = [
-        ("admin", "Admin", "admin", _env_password("LP_DEMO_ADMIN_PASSWORD", "admin123!")),
-        ("operator", "Operator", "operator", _env_password("LP_DEMO_OPERATOR_PASSWORD", "ops123!")),
-        ("viewer", "Viewer", "viewer", _env_password("LP_DEMO_VIEWER_PASSWORD", "view123!")),
+        ("admin", "Admin", "admin", _env_password("LP_DEMO_ADMIN_PASSWORD", "AdminOps!2026")),
+        ("operator", "Operator", "operator", _env_password("LP_DEMO_OPERATOR_PASSWORD", "OperatorOps!2026")),
+        ("viewer", "Viewer", "viewer", _env_password("LP_DEMO_VIEWER_PASSWORD", "ViewerOps!2026")),
     ]
     rows = []
     for username, display_name, role, password in defaults:
