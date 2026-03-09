@@ -1069,7 +1069,7 @@ def render_service_readiness_panel(health_report: Dict[str, object]) -> None:
             for item in review_flow:
                 st.markdown(f"- {item}")
             if two_minute_review:
-                st.markdown("**Quick Review**")
+                st.markdown("**Review Summary**")
                 for item in two_minute_review:
                     st.markdown(f"- {item}")
         with right:
@@ -1103,7 +1103,7 @@ def render_service_readiness_panel(health_report: Dict[str, object]) -> None:
             with left_review:
                 review_two_minute = review_pack.get("two_minute_review", []) if isinstance(review_pack, dict) else []
                 if review_two_minute:
-                    st.markdown("**Quick Review**")
+                    st.markdown("**Review Summary**")
                     for item in review_two_minute:
                         st.markdown(f"- {item}")
                 st.markdown("**Review Sequence**")
