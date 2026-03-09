@@ -202,7 +202,7 @@ python3 scripts/scenario_runner.py --out-dir /tmp/lp-scenario
 - `logistics-worklist-report-v1` 계약으로 executive summary, queue snapshot, SLA health, operator actions, audit status를 같은 언어로 묶습니다.
 - reviewer flow: `health -> Control Tower Brief -> Worklist -> Governance -> Evidence Pack`
 
-## Quick Review Path
+## Review Flow
 - `make health`로 pipeline freshness, model floor, queue parity, audit chain을 먼저 확인합니다.
 - `Runtime Scorecard`에서 runtime score, fail/warn count, queue parity, audit checked를 먼저 훑습니다.
 - `Control Tower Brief`에서 report contract, watchouts, review flow를 읽고 현재 운영 posture를 파악합니다.
