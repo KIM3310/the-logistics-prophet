@@ -12,6 +12,12 @@ Datadog 전송은 옵션이며, 키가 없으면 dry-run/파일 출력 형태로
 - 핵심 증거는 리스크 큐, SHAP 근거, SPARQL 질문, evidence pack export, 그리고 운영 콘솔입니다.
 - 빠른 검토 경로: 서비스 정의 -> 빠른 실행 -> Service-Grade Surfaces -> Review Flow 순서로 확인하면 됩니다.
 
+
+## 커리어 시그널
+- **AI 엔지니어 관점:** 예측 모델, SHAP 근거, 온톨로지 질의를 하나의 운영 흐름으로 묶어 보여줍니다.
+- **솔루션/클라우드 아키텍트 관점:** quality gate, mart build, audit/export, optional Datadog 연동까지 설명 가능합니다.
+- **프리세일즈/세일즈 관점:** 리스크 큐와 evidence pack 덕분에 가치 설명과 데모 흐름이 선명합니다.
+
 ## Demo video
 https://www.youtube.com/watch?v=NDZKmDZ_R-w
 
