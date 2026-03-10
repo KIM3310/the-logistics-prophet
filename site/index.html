@@ -3,6 +3,16 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+  
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="The Logistics Prophet | Predictive Control Tower">
+  <meta property="og:description" content="Predictive logistics control tower with ontology, data-quality gates, model competition, SHAP explainability, and operations workflow.">
+  <meta property="og:image" content="/preview-card.svg">
+  <meta property="og:image:alt" content="The Logistics Prophet review card for predictive control-tower proof surfaces">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="The Logistics Prophet | Predictive Control Tower">
+  <meta name="twitter:description" content="Predictive logistics control tower with ontology, data-quality gates, model competition, SHAP explainability, and operations workflow.">
+  <meta name="twitter:image" content="/preview-card.svg">
   <meta name="google-adsense-account" content="ca-pub-0000000000000000" />
   <title>The Logistics Prophet | Predictive Control Tower</title>
   <meta name="description" content="Predictive logistics control tower with quality gates, model evidence, and operational governance." />
@@ -48,6 +58,13 @@
         <li>Data quality gate + audit trail verification</li>
         <li>Evidence pack export for review and postmortem</li>
       </ul>
+      <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:14px;">
+        <button id="copyReviewRoutesBtn" type="button" style="border:1px solid var(--line); border-radius:999px; background:#fff; color:var(--ink); padding:10px 14px; cursor:pointer;">Copy Review Routes</button>
+        <button id="copyRuntimeClaimBtn" type="button" style="border:1px solid var(--line); border-radius:999px; background:#fff; color:var(--ink); padding:10px 14px; cursor:pointer;">Copy Runtime Claim</button>
+        <button id="copyReviewerBundleBtn" type="button" style="border:1px solid var(--line); border-radius:999px; background:#fff; color:var(--ink); padding:10px 14px; cursor:pointer;">Copy Reviewer Bundle</button>
+        <button id="copyReviewChecklistBtn" type="button" style="border:1px solid var(--line); border-radius:999px; background:#fff; color:var(--ink); padding:10px 14px; cursor:pointer;">Copy Review Checklist</button>
+      </div>
+      <p id="reviewActionsStatus" style="margin-top:10px; font-size:13px; color:var(--muted);">Reviewer quick-path actions keep the first review handoff ready. Shortcuts: R routes · C claim · B reviewer bundle. Keyboard: R routes · C claim · K checklist · ? help.</p>
     </section>
 
     <section class="card">
@@ -92,6 +109,128 @@
       };
       document.head.appendChild(script);
     })();
+
+    async function copyTextValue(text) {
+      if (!text) return false;
+      try {
+        if (navigator.clipboard?.writeText) {
+          await navigator.clipboard.writeText(text);
+          return true;
+        }
+      } catch (_err) {
+        // Fallback below.
+      }
+
+      try {
+        const helper = document.createElement("textarea");
+        helper.value = text;
+        helper.style.position = "fixed";
+        helper.style.opacity = "0";
+        document.body.appendChild(helper);
+        helper.focus();
+        helper.select();
+        const ok = document.execCommand("copy");
+        document.body.removeChild(helper);
+        return Boolean(ok);
+      } catch (_err) {
+        return false;
+      }
+    }
+
+    const reviewActionsStatus = document.getElementById("reviewActionsStatus");
+    const reviewRoutes = [
+      "/healthz",
+      "/api/runtime/brief",
+      "/api/runtime/scorecard",
+      "/api/review-pack",
+    ];
+
+    async function copyReviewRoutes() {
+      const text = ["The Logistics Prophet review routes", ...reviewRoutes.map((route) => `- ${route}`)].join("\n");
+      const ok = await copyTextValue(text);
+      if (reviewActionsStatus) {
+        reviewActionsStatus.textContent = ok ? "Review routes copied." : "Failed to copy review routes.";
+      }
+    }
+
+    async function copyRuntimeClaim() {
+      const text = [
+        "The Logistics Prophet runtime claim",
+        "Headline: Predictive logistics control tower with model evidence and operational governance.",
+        "Proof surfaces:",
+        ...reviewRoutes.map((route) => `- ${route}`),
+        "- README reviewer path",
+        "- Evidence pack export for review and postmortem",
+      ].join("\n");
+      const ok = await copyTextValue(text);
+      if (reviewActionsStatus) {
+        reviewActionsStatus.textContent = ok ? "Runtime claim copied." : "Failed to copy runtime claim.";
+      }
+    }
+
+    async function copyReviewChecklist() {
+      const text = [
+        "The Logistics Prophet review checklist",
+        "- Open /healthz first to confirm runtime posture.",
+        "- Inspect /api/runtime/brief for trust boundary and watchouts.",
+        "- Inspect /api/runtime/scorecard for evidence quality before promotion claims.",
+        "- Use /api/review-pack and the README reviewer path for the final handoff.",
+      ].join("\n");
+      const ok = await copyTextValue(text);
+      if (reviewActionsStatus) {
+        reviewActionsStatus.textContent = ok ? "Review checklist copied." : "Failed to copy review checklist.";
+      }
+    }
+
+    async function copyReviewerBundle() {
+      const text = [
+        "The Logistics Prophet reviewer bundle",
+        "Quick routes:",
+        ...reviewRoutes.map((route) => `- ${route}`),
+        "Proof surfaces:",
+        "- README reviewer path",
+        "- Quality gates and SHAP evidence on the static site",
+        "- Evidence pack export for review and postmortem",
+      ].join("\n");
+      const ok = await copyTextValue(text);
+      if (reviewActionsStatus) {
+        reviewActionsStatus.textContent = ok ? "Reviewer bundle copied." : "Failed to copy reviewer bundle.";
+      }
+    }
+
+    document.getElementById("copyReviewRoutesBtn")?.addEventListener("click", copyReviewRoutes);
+    document.getElementById("copyRuntimeClaimBtn")?.addEventListener("click", copyRuntimeClaim);
+    document.getElementById("copyReviewerBundleBtn")?.addEventListener("click", copyReviewerBundle);
+    document.getElementById("copyReviewChecklistBtn")?.addEventListener("click", copyReviewChecklist);
+    document.addEventListener("keydown", (event) => {
+      const tag = String(event.target?.tagName || "").toLowerCase();
+      if (tag === "input" || tag === "textarea" || tag === "select" || event.metaKey || event.ctrlKey || event.altKey) {
+        return;
+      }
+      const key = event.key.toLowerCase();
+      if (key === "?") {
+        if (reviewActionsStatus) {
+          reviewActionsStatus.textContent = "Keyboard: R routes · C runtime claim · B reviewer bundle · K review checklist · ? help.";
+        }
+        return;
+      }
+      if (key === "r") {
+        event.preventDefault();
+        void copyReviewRoutes();
+      }
+      if (key === "c") {
+        event.preventDefault();
+        void copyRuntimeClaim();
+      }
+      if (key === "b") {
+        event.preventDefault();
+        void copyReviewerBundle();
+      }
+      if (key === "k") {
+        event.preventDefault();
+        void copyReviewChecklist();
+      }
+    });
   </script>
 
 <script defer src="./analytics.js"></script>

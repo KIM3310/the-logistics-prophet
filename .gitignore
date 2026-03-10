@@ -4,6 +4,7 @@ __pycache__/
 .DS_Store
 .pytest_cache/
 .venv/
+.venv*/
 
 # Generated artifacts (rebuild with `python3 scripts/run_pipeline.py`)
 data/raw/
