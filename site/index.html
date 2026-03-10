@@ -58,6 +58,11 @@
         <li>Data quality gate + audit trail verification</li>
         <li>Evidence pack export for review and postmortem</li>
       </ul>
+      <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:14px;">
+        <button id="copyReviewRoutesBtn" type="button" style="border:1px solid var(--line); border-radius:999px; background:#fff; color:var(--ink); padding:10px 14px; cursor:pointer;">Copy Review Routes</button>
+        <button id="copyRuntimeClaimBtn" type="button" style="border:1px solid var(--line); border-radius:999px; background:#fff; color:var(--ink); padding:10px 14px; cursor:pointer;">Copy Runtime Claim</button>
+      </div>
+      <p id="reviewActionsStatus" style="margin-top:10px; font-size:13px; color:var(--muted);">Reviewer quick-path actions keep the first review handoff ready.</p>
     </section>
 
     <section class="card">
@@ -102,6 +107,67 @@
       };
       document.head.appendChild(script);
     })();
+
+    async function copyTextValue(text) {
+      if (!text) return false;
+      try {
+        if (navigator.clipboard?.writeText) {
+          await navigator.clipboard.writeText(text);
+          return true;
+        }
+      } catch (_err) {
+        // Fallback below.
+      }
+
+      try {
+        const helper = document.createElement("textarea");
+        helper.value = text;
+        helper.style.position = "fixed";
+        helper.style.opacity = "0";
+        document.body.appendChild(helper);
+        helper.focus();
+        helper.select();
+        const ok = document.execCommand("copy");
+        document.body.removeChild(helper);
+        return Boolean(ok);
+      } catch (_err) {
+        return false;
+      }
+    }
+
+    const reviewActionsStatus = document.getElementById("reviewActionsStatus");
+    const reviewRoutes = [
+      "/healthz",
+      "/api/runtime/brief",
+      "/api/runtime/scorecard",
+      "/api/review-pack",
+    ];
+
+    async function copyReviewRoutes() {
+      const text = ["The Logistics Prophet review routes", ...reviewRoutes.map((route) => `- ${route}`)].join("\n");
+      const ok = await copyTextValue(text);
+      if (reviewActionsStatus) {
+        reviewActionsStatus.textContent = ok ? "Review routes copied." : "Failed to copy review routes.";
+      }
+    }
+
+    async function copyRuntimeClaim() {
+      const text = [
+        "The Logistics Prophet runtime claim",
+        "Headline: Predictive logistics control tower with model evidence and operational governance.",
+        "Proof surfaces:",
+        ...reviewRoutes.map((route) => `- ${route}`),
+        "- README reviewer path",
+        "- Evidence pack export for review and postmortem",
+      ].join("\n");
+      const ok = await copyTextValue(text);
+      if (reviewActionsStatus) {
+        reviewActionsStatus.textContent = ok ? "Runtime claim copied." : "Failed to copy runtime claim.";
+      }
+    }
+
+    document.getElementById("copyReviewRoutesBtn")?.addEventListener("click", copyReviewRoutes);
+    document.getElementById("copyRuntimeClaimBtn")?.addEventListener("click", copyRuntimeClaim);
   </script>
 
 <script defer src="./analytics.js"></script>
