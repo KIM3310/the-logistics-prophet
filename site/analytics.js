@@ -1,6 +1,6 @@
 (function () {
   var DEFAULT_GA = "";
-  var DEFAULT_CLARITY = "CLARITY_PROJECT_ID";
+  var DEFAULT_CLARITY = "";
   var DEFAULT_GTM = "GTM-MHK4C4D7";
 
   function readMeta(name) {
