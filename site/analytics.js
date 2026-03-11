@@ -1,7 +1,7 @@
 (function () {
   var DEFAULT_GA = "";
   var DEFAULT_CLARITY = "";
-  var DEFAULT_GTM = "GTM-MHK4C4D7";
+  var DEFAULT_GTM = "";
 
   function readMeta(name) {
     var node = document.querySelector("meta[name=\"" + name + "\"]");
