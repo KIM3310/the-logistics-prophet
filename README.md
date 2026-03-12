@@ -17,6 +17,12 @@ Datadog 전송은 옵션이며, 키가 없으면 dry-run/파일 출력 형태로
 - **솔루션/클라우드 아키텍트 관점:** quality gate, mart build, audit/export, optional Datadog 연동까지 설명 가능합니다.
 - **프리세일즈 / 솔루션 세일즈 관점:** 리스크 큐와 evidence pack 덕분에 가치 설명과 데모 흐름이 선명합니다.
 
+
+## 포트폴리오 맥락
+- **패밀리:** 거버넌스형 운영 / 컨트롤 타워 제품군
+- **이 레포의 역할:** 예측 모델·설명가능성·운영 콘솔을 묶는 물류 컨트롤 타워 축입니다.
+- **연결해서 볼 레포:** `Nexus-Hive`, `regulated-case-workbench`, `fab-ops-yield-control-tower`
+
 ## Runtime vs review/site surfaces
 - Primary runtime: `scripts/` builds the pipeline and `app/dashboard.py` runs the Streamlit control tower. Start there for the working system.
 - Review/site surfaces: `site/` is the static reviewer/Pages surface, while `docs/` and `specs/` are supporting materials.
