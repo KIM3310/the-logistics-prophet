@@ -31,6 +31,12 @@
     .hero-top { display:flex; flex-wrap:wrap; gap:10px; align-items:center; }
     .pill { display:inline-flex; align-items:center; padding:8px 12px; border-radius:999px; background:var(--soft); color:var(--accent); font-size:13px; font-weight:700; }
     .hero-grid { display:grid; grid-template-columns:1.4fr .9fr; gap:16px; }
+    .lens-tabs { display:flex; flex-wrap:wrap; gap:10px; margin-top:6px; }
+    .lens-tab { border:1px solid var(--line); border-radius:999px; background:#fff; color:var(--ink); padding:10px 14px; cursor:pointer; font-weight:600; }
+    .lens-tab.active { background:var(--accent); color:#fff; border-color:var(--accent); }
+    .lens-grid { display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); gap:12px; margin-top:12px; }
+    .lens-card { border:1px solid var(--line); border-radius:14px; padding:14px; background:#fff; }
+    .lens-card strong { display:block; margin-bottom:8px; }
     .action-row { display:flex; gap:10px; flex-wrap:wrap; margin-top:6px; }
     .cta { border:1px solid var(--line); border-radius:999px; background:#fff; color:var(--ink); padding:10px 14px; cursor:pointer; font-weight:600; }
     .cta-primary { background:var(--accent); color:#fff; border-color:var(--accent); }
@@ -38,7 +44,7 @@
     .split { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
     .ad { min-height:84px; border:1px dashed var(--line); border-radius:10px; padding:8px; background:#fbfcff; }
     footer { max-width:980px; margin:0 auto; padding:0 18px 34px; color:var(--muted); font-size:14px; }
-    @media (max-width:840px) { .hero-grid, .split { grid-template-columns:1fr; } }
+    @media (max-width:840px) { .hero-grid, .split, .lens-grid { grid-template-columns:1fr; } }
   </style>
 <meta name="clarity-project-id" content="" />
 <meta name="gtm-container-id" content="" />
@@ -82,6 +88,16 @@
             <button id="copyReviewerBundleBtn" class="cta" type="button">Copy Bundle</button>
           </div>
           <p id="reviewActionsStatus" style="margin-top:10px; font-size:13px; color:var(--muted);">Fast path: copy the review checklist first, then grab routes or the reviewer bundle as needed. Keyboard: R routes · C claim · B bundle · K checklist · ? help.</p>
+          <div class="lens-tabs" role="tablist" aria-label="logistics lens">
+            <button id="lensOpsBtn" class="lens-tab active" type="button">Ops</button>
+            <button id="lensDataBtn" class="lens-tab" type="button">Data</button>
+            <button id="lensExecutiveBtn" class="lens-tab" type="button">Executive</button>
+          </div>
+          <div id="lensGrid" class="lens-grid">
+            <article class="lens-card"><strong>01 · Runtime</strong><p>Confirm posture before showing predictions or alerts.</p></article>
+            <article class="lens-card"><strong>02 · Evidence</strong><p>Use quality gates and SHAP before claiming actionability.</p></article>
+            <article class="lens-card"><strong>03 · Handoff</strong><p>End with the review pack and export bundle.</p></article>
+          </div>
         </div>
         <aside class="card" style="margin:0;">
           <h2>What reviewers should do first</h2>
@@ -166,6 +182,38 @@
     }
 
     const reviewActionsStatus = document.getElementById("reviewActionsStatus");
+    const lensGrid = document.getElementById("lensGrid");
+    const lensOpsBtn = document.getElementById("lensOpsBtn");
+    const lensDataBtn = document.getElementById("lensDataBtn");
+    const lensExecutiveBtn = document.getElementById("lensExecutiveBtn");
+    let currentLens = "ops";
+    const lensConfig = {
+      ops: [
+        ["01 · Runtime", "Confirm posture before showing predictions or alerts."],
+        ["02 · Evidence", "Use quality gates and SHAP before claiming actionability."],
+        ["03 · Handoff", "End with the review pack and export bundle."],
+      ],
+      data: [
+        ["01 · Quality gate", "Use data quality before any model competition claim."],
+        ["02 · Explainability", "Keep SHAP and semantic evidence visible together."],
+        ["03 · Audit trail", "Use the reviewer bundle once the evidence chain reads cleanly."],
+      ],
+      executive: [
+        ["01 · Risk queue", "Lead with owner/ETA and risk priority instead of raw model details."],
+        ["02 · Review checklist", "Use the checklist as the executive handoff path."],
+        ["03 · Bundle", "Copy the reviewer bundle once the story is concise enough to forward."],
+      ],
+    };
+
+    function renderLensGrid() {
+      const cards = lensConfig[currentLens];
+      if (!cards || !lensGrid) return;
+      lensGrid.innerHTML = cards.map(([title, body]) => `<article class="lens-card"><strong>${title}</strong><p>${body}</p></article>`).join("");
+      [lensOpsBtn, lensDataBtn, lensExecutiveBtn].forEach((btn) => btn?.classList.remove("active"));
+      if (currentLens === "ops") lensOpsBtn?.classList.add("active");
+      if (currentLens === "data") lensDataBtn?.classList.add("active");
+      if (currentLens === "executive") lensExecutiveBtn?.classList.add("active");
+    }
     const reviewRoutes = [
       "/healthz",
       "/api/runtime/brief",
@@ -230,6 +278,10 @@
     document.getElementById("copyRuntimeClaimBtn")?.addEventListener("click", copyRuntimeClaim);
     document.getElementById("copyReviewerBundleBtn")?.addEventListener("click", copyReviewerBundle);
     document.getElementById("copyReviewChecklistBtn")?.addEventListener("click", copyReviewChecklist);
+    lensOpsBtn?.addEventListener("click", () => { currentLens = "ops"; renderLensGrid(); });
+    lensDataBtn?.addEventListener("click", () => { currentLens = "data"; renderLensGrid(); });
+    lensExecutiveBtn?.addEventListener("click", () => { currentLens = "executive"; renderLensGrid(); });
+    renderLensGrid();
     document.addEventListener("keydown", (event) => {
       const tag = String(event.target?.tagName || "").toLowerCase();
       if (tag === "input" || tag === "textarea" || tag === "select" || event.metaKey || event.ctrlKey || event.altKey) {
