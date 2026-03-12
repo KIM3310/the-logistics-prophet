@@ -216,11 +216,11 @@ python3 scripts/scenario_runner.py --out-dir /tmp/lp-scenario
 - reviewer flow: `health -> Control Tower Brief -> Worklist -> Governance -> Evidence Pack`
 
 ## Review Flow
-- `make health`로 pipeline freshness, model floor, queue parity, audit chain을 먼저 확인합니다.
-- `Runtime Scorecard`에서 runtime score, fail/warn count, queue parity, audit checked를 먼저 훑습니다.
-- `Control Tower Brief`에서 report contract, watchouts, review flow를 읽고 현재 운영 posture를 파악합니다.
-- `Worklist` 또는 `Queue + Update`에서 실제 operator actionability와 lot-at-risk 흐름을 확인합니다.
-- `Governance` 또는 `Evidence Pack`에서 reviewer handoff 전 증거와 승인 경계를 점검합니다.
+- `make health`로 pipeline freshness, model floor, queue parity, audit chain부터 먼저 고정합니다.
+- `Runtime Scorecard`에서 지금 운영이 건강한지, 아니면 설명보다 보강이 필요한지 먼저 읽습니다.
+- `Control Tower Brief`에서 report contract와 watchouts를 읽고 현재 운영 posture를 붙잡습니다.
+- `Worklist` 또는 `Queue + Update`에서 실제 operator actionability와 lot-at-risk 흐름이 이어지는지 확인합니다.
+- 마지막으로 `Governance` 또는 `Evidence Pack`에서 handoff 전에 남은 승인 경계를 점검합니다.
 
 ## Proof Assets
 - `make health`: pipeline freshness, quality gate, queue parity, audit integrity를 한 번에 확인합니다.
