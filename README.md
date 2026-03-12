@@ -9,6 +9,7 @@ Datadog 전송은 옵션이며, 키가 없으면 dry-run/파일 출력 형태로
 ## 포트폴리오 포지셔닝
 - 이 저장소는 예측 모델 데모가 아니라 운영팀이 바로 해석하고 조치할 수 있는 물류 컨트롤 타워를 목표로 합니다.
 - 핵심 증거는 리스크 큐, SHAP 근거, SPARQL 질문, evidence pack export, 그리고 운영 콘솔입니다.
+- health report에는 **disruption recovery drill** 요약이 포함되어, baseline queue risk와 recovery plan 이후 delta를 reviewer가 바로 비교할 수 있습니다.
 - 빠른 검토 경로: 서비스 정의 -> 빠른 실행 -> Service-Grade Surfaces -> Review Flow 순서로 확인하면 됩니다.
 
 ## 커리어 시그널
