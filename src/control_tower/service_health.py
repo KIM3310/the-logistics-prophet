@@ -232,6 +232,56 @@ def _build_runtime_scorecard(
     }
 
 
+def _build_recovery_drill(
+    *,
+    checks: List[Dict[str, Any]],
+    queue_csv_rows: int,
+    db_queue_count: int,
+    audit_checked: int,
+    min_model_auc: float,
+) -> Dict[str, Any]:
+    status_counts = {"pass": 0, "warn": 0, "fail": 0}
+    for item in checks:
+        status = str(item.get("status", "pass"))
+        if status in status_counts:
+            status_counts[status] += 1
+
+    fail_count = int(status_counts["fail"])
+    warn_count = int(status_counts["warn"])
+    baseline_risk = max(35, 100 - min(fail_count * 16 + warn_count * 5, 65))
+    recovered_risk = max(
+        20,
+        baseline_risk - min(18, 6 + warn_count * 2 + (0 if queue_csv_rows == db_queue_count else 6)),
+    )
+    eta_gain_hours = 6 if fail_count == 0 else 2 if warn_count <= 2 else 1
+
+    return {
+        "contract": "logistics-control-recovery-drill-v1",
+        "headline": "Disruption recovery drill that compares baseline queue risk against an operator action plan before route escalation.",
+        "summary": {
+            "baseline_risk_score": baseline_risk,
+            "recovered_risk_score": recovered_risk,
+            "eta_gain_hours": eta_gain_hours,
+            "audit_checked": int(audit_checked),
+            "min_model_auc": float(min_model_auc),
+        },
+        "items": [
+            {
+                "scenario": "carrier-delay-reroute",
+                "action_plan": "Reroute the top critical shipments to alternate capacity and tighten manual review for delayed lanes.",
+                "baseline_eta_hours": 18,
+                "recovered_eta_hours": max(6, 18 - eta_gain_hours),
+                "risk_delta": round(baseline_risk - recovered_risk, 1),
+            }
+        ],
+        "review_actions": [
+            "Run the recovery drill before claiming the queue is stable enough for downstream handoff.",
+            "Keep queue parity and audit integrity visible while simulating the operator action plan.",
+            "Pair this drill with the evidence pack before sharing a recovery recommendation.",
+        ],
+    }
+
+
 def _queue_csv_summary(path: Path) -> Dict[str, int]:
     if not path.exists():
         return {"row_count": 0, "unique_shipments": 0, "duplicate_rows": 0}
@@ -494,6 +544,13 @@ def build_service_health_report(
                 min_model_auc=float(min_model_auc),
                 strict_queue_parity=bool(strict_queue_parity),
             ),
+            "recovery_drill": _build_recovery_drill(
+                checks=checks,
+                queue_csv_rows=int(queue_csv.get("row_count", 0)),
+                db_queue_count=db_queue_count,
+                audit_checked=_safe_int(audit.get("checked", 0)),
+                min_model_auc=float(min_model_auc),
+            ),
             "review_pack": {
                 "contract": "logistics-control-review-pack-v1",
                 "headline": "Reviewer pack for the logistics worklist: queue parity, audit chain, action loop, and evidence exports in one surface.",
@@ -502,6 +559,7 @@ def build_service_health_report(
                     "service_db_rows": db_queue_count,
                     "strict_queue_parity": bool(strict_queue_parity),
                     "audit_chain_checked": _safe_int(audit.get("checked", 0)),
+                    "recovery_drill": "logistics-control-recovery-drill-v1",
                 },
                 "approval_gate": {
                     "quality_gate_required": True,

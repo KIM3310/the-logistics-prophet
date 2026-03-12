@@ -53,9 +53,17 @@ class TestServiceHealth(unittest.TestCase):
             report["service_meta"]["runtime_scorecard"]["contract"],
             "logistics-control-runtime-scorecard-v1",
         )
+        self.assertEqual(
+            report["service_meta"]["recovery_drill"]["contract"],
+            "logistics-control-recovery-drill-v1",
+        )
         self.assertGreaterEqual(
             report["service_meta"]["runtime_scorecard"]["summary"]["runtime_score"],
             40,
+        )
+        self.assertGreaterEqual(
+            report["service_meta"]["recovery_drill"]["summary"]["baseline_risk_score"],
+            report["service_meta"]["recovery_drill"]["summary"]["recovered_risk_score"],
         )
         self.assertIn(
             "make health",
@@ -65,6 +73,7 @@ class TestServiceHealth(unittest.TestCase):
         self.assertEqual(len(report["service_meta"]["review_pack"].get("two_minute_review", [])), 4)
         self.assertIn("artifacts", report["service_meta"])
         self.assertIn("proof_assets", report["service_meta"])
+        self.assertIn("recovery_drill", report["service_meta"]["review_pack"]["proof_bundle"])
         self.assertEqual(report["service_meta"]["proof_assets"][0]["label"], "Health Audit")
         self.assertIn("why", report["service_meta"]["proof_assets"][0])
         self.assertIn("why", report["service_meta"]["review_pack"]["proof_assets"][0])
