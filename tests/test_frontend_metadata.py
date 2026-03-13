@@ -33,12 +33,14 @@ class FrontendMetadataTests(unittest.TestCase):
             "id=\"copyReviewRoutesBtn\"",
             "id=\"laneFocusPanel\"",
             "id=\"copyLaneFocusBtn\"",
+            "id=\"laneFocusGuard\"",
             "Hold one risky lane from baseline through handoff.",
             "Public site = reviewer map",
             "recovery drill summary",
             "owner / ETA workflow",
             "This public surface summarizes the proof route",
             "Proof freshness matters: rerun health and review-pack export before forwarding stale lane copy.",
+            "Lane continuity stays blocked until owner, ETA, and proof route all match the same lane.",
         ]
 
         for token in required_tokens:

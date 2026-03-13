@@ -141,6 +141,7 @@
               <button id="copyLaneFocusBtn" class="cta" type="button">Copy Lane Note</button>
             </div>
             <p id="laneFocusStatus" class="lane-focus-status">Lane focus starts on baseline risk so the recovery story has context.</p>
+            <p id="laneFocusGuard" class="lane-focus-status">Lane continuity stays blocked until owner, ETA, and proof route all match the same lane.</p>
             <div class="hero-proof-note" id="proofFreshnessPanel">
               <strong id="proofFreshnessSignal">Proof freshness matters: rerun health and review-pack export before forwarding stale lane copy.</strong>
               <p id="proofFreshnessRoute" class="route-note">Fresh route: /healthz → /api/runtime/brief → /api/review-pack → evidence pack export.</p>
@@ -336,6 +337,7 @@
         action: 'Next move: confirm the lane still needs intervention.',
         proof: 'Proof: runtime posture, queue signal, and watchouts stay together first.',
         status: 'Lane focus starts on baseline risk so the recovery story has context.',
+        guard: 'Lane continuity stays blocked until owner, ETA, and proof route all match the same baseline lane.',
       },
       recovery: {
         freshness: 'Recovery proof should be re-copied after the latest scorecard and drill summary are both visible.',
@@ -347,6 +349,7 @@
         action: 'Next move: compare baseline risk against the proposed operator plan.',
         proof: 'Proof: recovery delta and SHAP evidence stay connected for the same lane.',
         status: 'Recovery focus is active. Keep delta proof attached before you summarize trust.',
+        guard: 'Lane continuity stays blocked until recovery owner, ETA, and proof route still describe the same lane.',
       },
       handoff: {
         freshness: 'Handoff copy should only leave the page after health, review pack, and export bundle were refreshed together.',
@@ -358,6 +361,7 @@
         action: 'Next move: copy the reviewer bundle only after owner and ETA read clearly.',
         proof: 'Proof: bundle, audit posture, and postmortem path all point to the same lane.',
         status: 'Handoff focus is active. This is the forwarding view, not the discovery view.',
+        guard: 'Lane continuity stays blocked until handoff owner, ETA, and proof bundle all match the same lane.',
       },
     };
 
@@ -430,6 +434,7 @@
     const laneFocusAction = document.getElementById("laneFocusAction");
     const laneFocusProof = document.getElementById("laneFocusProof");
     const laneFocusStatus = document.getElementById("laneFocusStatus");
+    const laneFocusGuard = document.getElementById("laneFocusGuard");
     const laneFocusCopyNote = document.getElementById("laneFocusCopyNote");
     const proofFreshnessSignal = document.getElementById("proofFreshnessSignal");
     const proofFreshnessRoute = document.getElementById("proofFreshnessRoute");
@@ -445,6 +450,7 @@
       if (laneFocusAction) laneFocusAction.textContent = lane.action;
       if (laneFocusProof) laneFocusProof.textContent = lane.proof;
       if (laneFocusStatus) laneFocusStatus.textContent = lane.status;
+      if (laneFocusGuard) laneFocusGuard.textContent = lane.guard;
       if (proofFreshnessSignal) proofFreshnessSignal.textContent = lane.freshness;
       if (proofFreshnessRoute) proofFreshnessRoute.textContent = lane.freshnessRoute;
       if (laneFocusCopyNote) laneFocusCopyNote.textContent = `Use Copy Lane Note once the ${currentLaneFocus} lane story is concise enough to forward.`;
