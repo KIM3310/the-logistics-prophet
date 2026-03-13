@@ -141,6 +141,10 @@
               <button id="copyLaneFocusBtn" class="cta" type="button">Copy Lane Note</button>
             </div>
             <p id="laneFocusStatus" class="lane-focus-status">Lane focus starts on baseline risk so the recovery story has context.</p>
+            <div class="hero-proof-note" id="proofFreshnessPanel">
+              <strong id="proofFreshnessSignal">Proof freshness matters: rerun health and review-pack export before forwarding stale lane copy.</strong>
+              <p id="proofFreshnessRoute" class="route-note">Fresh route: /healthz → /api/runtime/brief → /api/review-pack → evidence pack export.</p>
+            </div>
           </section>
           <div class="lens-tabs" role="tablist" aria-label="logistics lens">
             <button id="lensOpsBtn" class="lens-tab active" type="button">Ops</button>
@@ -323,6 +327,8 @@
     ];
     const laneFocusConfig = {
       baseline: {
+        freshness: 'Proof freshness matters: rerun health and review-pack export before forwarding stale lane copy.',
+        freshnessRoute: 'Fresh route: /healthz → /api/runtime/brief → /api/review-pack → evidence pack export.',
         title: 'Hold one risky lane from baseline through handoff.',
         summary: 'Start with posture and queue risk before you explain any operator plan.',
         signal: 'Baseline risk is still the anchor.',
@@ -332,6 +338,8 @@
         status: 'Lane focus starts on baseline risk so the recovery story has context.',
       },
       recovery: {
+        freshness: 'Recovery proof should be re-copied after the latest scorecard and drill summary are both visible.',
+        freshnessRoute: 'Fresh route: /api/runtime/scorecard → recovery drill summary → /api/review-pack.',
         title: 'Switch into the recovery delta without losing the same lane.',
         summary: 'Once the baseline is clear, move into before/after proof for the exact lane you are trying to stabilize.',
         signal: 'Recovery delta explains what changed.',
@@ -341,6 +349,8 @@
         status: 'Recovery focus is active. Keep delta proof attached before you summarize trust.',
       },
       handoff: {
+        freshness: 'Handoff copy should only leave the page after health, review pack, and export bundle were refreshed together.',
+        freshnessRoute: 'Fresh route: /api/review-pack → evidence pack export → downstream reviewer handoff.',
         title: 'Finish with a review-ready handoff, not a floating proof snippet.',
         summary: 'Close the lane with the owner, ETA, and reviewer bundle once the route has been proven.',
         signal: 'Handoff closes the same lane cleanly.',
@@ -421,6 +431,8 @@
     const laneFocusProof = document.getElementById("laneFocusProof");
     const laneFocusStatus = document.getElementById("laneFocusStatus");
     const laneFocusCopyNote = document.getElementById("laneFocusCopyNote");
+    const proofFreshnessSignal = document.getElementById("proofFreshnessSignal");
+    const proofFreshnessRoute = document.getElementById("proofFreshnessRoute");
     let currentLaneFocus = "baseline";
 
     function renderLaneFocus() {
@@ -433,6 +445,8 @@
       if (laneFocusAction) laneFocusAction.textContent = lane.action;
       if (laneFocusProof) laneFocusProof.textContent = lane.proof;
       if (laneFocusStatus) laneFocusStatus.textContent = lane.status;
+      if (proofFreshnessSignal) proofFreshnessSignal.textContent = lane.freshness;
+      if (proofFreshnessRoute) proofFreshnessRoute.textContent = lane.freshnessRoute;
       if (laneFocusCopyNote) laneFocusCopyNote.textContent = `Use Copy Lane Note once the ${currentLaneFocus} lane story is concise enough to forward.`;
       document.querySelectorAll('.lane-focus-toggle').forEach((button) => button.classList.remove('active'));
       if (currentLaneFocus === 'baseline') document.getElementById('focusBaselineBtn')?.classList.add('active');
