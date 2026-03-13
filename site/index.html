@@ -34,6 +34,13 @@
     .hero-grid { display:grid; grid-template-columns:1.4fr .9fr; gap:16px; }
     .eyebrow { margin:0 0 8px; font-size:12px; letter-spacing:0.08em; text-transform:uppercase; color:var(--accent); font-weight:700; }
     .hero-proof-note { margin-top:12px; padding:14px; border-radius:14px; border:1px solid var(--line); background:linear-gradient(135deg, rgba(31,95,255,0.08), rgba(14,122,75,0.06)); }
+    .lane-focus { margin-top:14px; display:grid; gap:12px; padding:16px; border:1px solid var(--line); border-radius:16px; background:#fcfdff; }
+    .lane-focus-grid { display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); gap:12px; }
+    .lane-focus-card { border:1px solid var(--line); border-radius:14px; padding:14px; background:#fff; }
+    .lane-focus-card strong { display:block; margin-bottom:8px; }
+    .lane-focus-actions { display:flex; flex-wrap:wrap; gap:10px; }
+    .lane-focus-status { font-size:13px; color:var(--muted); }
+    .lane-focus-toggle.active { background:var(--accent); color:#fff; border-color:var(--accent); }
     .lens-tabs { display:flex; flex-wrap:wrap; gap:10px; margin-top:6px; }
     .lens-tab { border:1px solid var(--line); border-radius:999px; background:#fff; color:var(--ink); padding:10px 14px; cursor:pointer; font-weight:600; }
     .lens-tab.active { background:var(--accent); color:#fff; border-color:var(--accent); }
@@ -53,7 +60,7 @@
     .signal { display:inline-flex; align-items:center; gap:8px; padding:6px 10px; border-radius:999px; background:#f4fbf7; color:var(--success); font-weight:700; font-size:13px; }
     .ad { min-height:84px; border:1px dashed var(--line); border-radius:10px; padding:8px; background:#fbfcff; }
     footer { max-width:980px; margin:0 auto; padding:0 18px 34px; color:var(--muted); font-size:14px; }
-    @media (max-width:840px) { .hero-grid, .split, .lens-grid, .proof-grid { grid-template-columns:1fr; } }
+    @media (max-width:840px) { .hero-grid, .split, .lens-grid, .proof-grid, .lane-focus-grid { grid-template-columns:1fr; } }
   </style>
 <meta name="clarity-project-id" content="" />
 <meta name="gtm-container-id" content="" />
@@ -105,6 +112,25 @@
             <button id="copyReviewerBundleBtn" class="cta" type="button">Copy Bundle</button>
           </div>
           <p id="reviewActionsStatus" style="margin-top:10px; font-size:13px; color:var(--muted);">Fast path: copy the review checklist first, then routes or the reviewer bundle. Keyboard: R routes · C claim · B bundle · K checklist · ? help.</p>
+          <section class="lane-focus" id="laneFocusPanel">
+            <div>
+              <p class="eyebrow" style="margin-bottom:6px;">One-lane continuity</p>
+              <h2 id="laneFocusTitle">Hold one risky lane from baseline through handoff.</h2>
+              <p id="laneFocusSummary" class="lane-focus-status">Pick the lane you want to narrate, then keep its proof route and next action visible without jumping around the page.</p>
+            </div>
+            <div class="lane-focus-grid">
+              <article class="lane-focus-card"><strong id="laneFocusSignal">Baseline risk is still the anchor.</strong><p id="laneFocusRoute">Route: /healthz → /api/runtime/brief → /api/runtime/scorecard</p></article>
+              <article class="lane-focus-card"><strong id="laneFocusAction">Next move: confirm the lane still needs intervention.</strong><p id="laneFocusProof">Proof: runtime posture, queue signal, and watchouts stay together first.</p></article>
+              <article class="lane-focus-card"><strong>Copyable lane note</strong><p id="laneFocusCopyNote">Use Copy Lane Note once the lane story is concise enough to forward.</p></article>
+            </div>
+            <div class="lane-focus-actions">
+              <button id="focusBaselineBtn" class="cta lane-focus-toggle active" type="button">Baseline</button>
+              <button id="focusRecoveryBtn" class="cta lane-focus-toggle" type="button">Recovery</button>
+              <button id="focusHandoffBtn" class="cta lane-focus-toggle" type="button">Handoff</button>
+              <button id="copyLaneFocusBtn" class="cta" type="button">Copy Lane Note</button>
+            </div>
+            <p id="laneFocusStatus" class="lane-focus-status">Lane focus starts on baseline risk so the recovery story has context.</p>
+          </section>
           <div class="lens-tabs" role="tablist" aria-label="logistics lens">
             <button id="lensOpsBtn" class="lens-tab active" type="button">Ops</button>
             <button id="lensDataBtn" class="lens-tab" type="button">Data</button>
@@ -284,6 +310,35 @@
       "/api/runtime/scorecard",
       "/api/review-pack",
     ];
+    const laneFocusConfig = {
+      baseline: {
+        title: 'Hold one risky lane from baseline through handoff.',
+        summary: 'Start with posture and queue risk before you explain any operator plan.',
+        signal: 'Baseline risk is still the anchor.',
+        route: 'Route: /healthz → /api/runtime/brief → /api/runtime/scorecard',
+        action: 'Next move: confirm the lane still needs intervention.',
+        proof: 'Proof: runtime posture, queue signal, and watchouts stay together first.',
+        status: 'Lane focus starts on baseline risk so the recovery story has context.',
+      },
+      recovery: {
+        title: 'Switch into the recovery delta without losing the same lane.',
+        summary: 'Once the baseline is clear, move into before/after proof for the exact lane you are trying to stabilize.',
+        signal: 'Recovery delta explains what changed.',
+        route: 'Route: /api/runtime/scorecard → recovery drill summary → /api/review-pack',
+        action: 'Next move: compare baseline risk against the proposed operator plan.',
+        proof: 'Proof: recovery delta and SHAP evidence stay connected for the same lane.',
+        status: 'Recovery focus is active. Keep delta proof attached before you summarize trust.',
+      },
+      handoff: {
+        title: 'Finish with a review-ready handoff, not a floating proof snippet.',
+        summary: 'Close the lane with the owner, ETA, and reviewer bundle once the route has been proven.',
+        signal: 'Handoff closes the same lane cleanly.',
+        route: 'Route: /api/review-pack → evidence pack export → downstream reviewer handoff',
+        action: 'Next move: copy the reviewer bundle only after owner and ETA read clearly.',
+        proof: 'Proof: bundle, audit posture, and postmortem path all point to the same lane.',
+        status: 'Handoff focus is active. This is the forwarding view, not the discovery view.',
+      },
+    };
 
     async function copyReviewRoutes() {
       const text = [
@@ -347,14 +402,59 @@
       }
     }
 
+    const laneFocusTitle = document.getElementById("laneFocusTitle");
+    const laneFocusSummary = document.getElementById("laneFocusSummary");
+    const laneFocusSignal = document.getElementById("laneFocusSignal");
+    const laneFocusRoute = document.getElementById("laneFocusRoute");
+    const laneFocusAction = document.getElementById("laneFocusAction");
+    const laneFocusProof = document.getElementById("laneFocusProof");
+    const laneFocusStatus = document.getElementById("laneFocusStatus");
+    const laneFocusCopyNote = document.getElementById("laneFocusCopyNote");
+    let currentLaneFocus = "baseline";
+
+    function renderLaneFocus() {
+      const lane = laneFocusConfig[currentLaneFocus];
+      if (!lane) return;
+      if (laneFocusTitle) laneFocusTitle.textContent = lane.title;
+      if (laneFocusSummary) laneFocusSummary.textContent = lane.summary;
+      if (laneFocusSignal) laneFocusSignal.textContent = lane.signal;
+      if (laneFocusRoute) laneFocusRoute.textContent = lane.route;
+      if (laneFocusAction) laneFocusAction.textContent = lane.action;
+      if (laneFocusProof) laneFocusProof.textContent = lane.proof;
+      if (laneFocusStatus) laneFocusStatus.textContent = lane.status;
+      if (laneFocusCopyNote) laneFocusCopyNote.textContent = `Use Copy Lane Note once the ${currentLaneFocus} lane story is concise enough to forward.`;
+      document.querySelectorAll('.lane-focus-toggle').forEach((button) => button.classList.remove('active'));
+      if (currentLaneFocus === 'baseline') document.getElementById('focusBaselineBtn')?.classList.add('active');
+      if (currentLaneFocus === 'recovery') document.getElementById('focusRecoveryBtn')?.classList.add('active');
+      if (currentLaneFocus === 'handoff') document.getElementById('focusHandoffBtn')?.classList.add('active');
+    }
+
+    async function copyLaneFocusNote() {
+      const lane = laneFocusConfig[currentLaneFocus];
+      const ok = await copyTextValue([
+        `The Logistics Prophet ${currentLaneFocus} lane note`,
+        `Title: ${lane.title}`,
+        `Summary: ${lane.summary}`,
+        lane.route,
+        lane.action,
+        lane.proof,
+      ].join('\n'));
+      if (laneFocusStatus) laneFocusStatus.textContent = ok ? 'Lane note copied.' : 'Failed to copy lane note.';
+    }
+
     document.getElementById("copyReviewRoutesBtn")?.addEventListener("click", copyReviewRoutes);
     document.getElementById("copyRuntimeClaimBtn")?.addEventListener("click", copyRuntimeClaim);
     document.getElementById("copyReviewerBundleBtn")?.addEventListener("click", copyReviewerBundle);
     document.getElementById("copyReviewChecklistBtn")?.addEventListener("click", copyReviewChecklist);
+    document.getElementById("copyLaneFocusBtn")?.addEventListener("click", copyLaneFocusNote);
+    document.getElementById("focusBaselineBtn")?.addEventListener("click", () => { currentLaneFocus = "baseline"; renderLaneFocus(); });
+    document.getElementById("focusRecoveryBtn")?.addEventListener("click", () => { currentLaneFocus = "recovery"; renderLaneFocus(); });
+    document.getElementById("focusHandoffBtn")?.addEventListener("click", () => { currentLaneFocus = "handoff"; renderLaneFocus(); });
     lensOpsBtn?.addEventListener("click", () => { currentLens = "ops"; renderLensGrid(); });
     lensDataBtn?.addEventListener("click", () => { currentLens = "data"; renderLensGrid(); });
     lensExecutiveBtn?.addEventListener("click", () => { currentLens = "executive"; renderLensGrid(); });
     renderLensGrid();
+    renderLaneFocus();
     document.addEventListener("keydown", (event) => {
       const tag = String(event.target?.tagName || "").toLowerCase();
       if (tag === "input" || tag === "textarea" || tag === "select" || event.metaKey || event.ctrlKey || event.altKey) {
@@ -382,6 +482,10 @@
       if (key === "k") {
         event.preventDefault();
         void copyReviewChecklist();
+      }
+      if (key === "l") {
+        event.preventDefault();
+        void copyLaneFocusNote();
       }
     });
   </script>
