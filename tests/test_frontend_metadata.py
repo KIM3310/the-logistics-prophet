@@ -29,6 +29,8 @@ class FrontendMetadataTests(unittest.TestCase):
         html = INDEX_HTML.read_text(encoding="utf-8")
         required_tokens = [
             "Reviewer continuity, not runtime theater",
+            "id=\"copyReviewChecklistBtn\"",
+            "id=\"copyReviewRoutesBtn\"",
             "id=\"laneFocusPanel\"",
             "id=\"copyLaneFocusBtn\"",
             "Hold one risky lane from baseline through handoff.",
