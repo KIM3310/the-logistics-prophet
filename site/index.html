@@ -3,21 +3,21 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  
+
   <meta property="og:type" content="website">
   <meta property="og:title" content="The Logistics Prophet | Predictive Control Tower">
-  <meta property="og:description" content="Predictive logistics control tower with ontology, data-quality gates, model competition, SHAP explainability, and operations workflow.">
+  <meta property="og:description" content="Predictive logistics control tower with reviewer continuity for runtime posture, recovery proof, SHAP evidence, and handoff governance.">
   <meta property="og:image" content="/preview-card.svg">
   <meta property="og:image:alt" content="The Logistics Prophet review card for predictive control-tower proof surfaces">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="The Logistics Prophet | Predictive Control Tower">
-  <meta name="twitter:description" content="Predictive logistics control tower with ontology, data-quality gates, model competition, SHAP explainability, and operations workflow.">
+  <meta name="twitter:description" content="Predictive logistics control tower with reviewer continuity for runtime posture, recovery proof, SHAP evidence, and handoff governance.">
   <meta name="twitter:image" content="/preview-card.svg">
   <meta name="google-adsense-account" content="" />
   <title>The Logistics Prophet | Predictive Control Tower</title>
-  <meta name="description" content="Predictive logistics control tower with quality gates, model evidence, and operational governance." />
+  <meta name="description" content="Predictive logistics control tower with a reviewer-facing path for recovery proof, SHAP evidence, actionability checks, and handoff governance." />
   <style>
-    :root { --bg:#eef3fb; --card:#fff; --line:#d8dfef; --ink:#10203f; --muted:#4e5f82; --accent:#1f5fff; --soft:#eaf0ff; }
+    :root { --bg:#eef3fb; --card:#fff; --line:#d8dfef; --ink:#10203f; --muted:#4e5f82; --accent:#1f5fff; --soft:#eaf0ff; --success:#0e7a4b; }
     * { box-sizing:border-box; }
     body { margin:0; font-family: ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,sans-serif; background:radial-gradient(circle at top left, rgba(31,95,255,0.08), transparent 28%), var(--bg); color:var(--ink); }
     header { padding:18px 22px; border-bottom:1px solid var(--line); background:rgba(255,255,255,0.88); backdrop-filter: blur(10px); position:sticky; top:0; z-index:10; }
@@ -25,12 +25,15 @@
     nav a { color:var(--accent); text-decoration:none; }
     main { max-width:1080px; margin:0 auto; padding:26px 18px 42px; display:grid; gap:16px; }
     .card { background:var(--card); border:1px solid var(--line); border-radius:18px; padding:18px; box-shadow:0 18px 40px rgba(16,32,63,0.06); }
-    h1,h2 { margin:0 0 10px; }
+    h1,h2,h3 { margin:0 0 10px; }
     p,li { line-height:1.56; color:var(--muted); }
+    code { font-family: ui-monospace,SFMono-Regular,Menlo,monospace; }
     .hero { display:grid; gap:14px; }
     .hero-top { display:flex; flex-wrap:wrap; gap:10px; align-items:center; }
     .pill { display:inline-flex; align-items:center; padding:8px 12px; border-radius:999px; background:var(--soft); color:var(--accent); font-size:13px; font-weight:700; }
     .hero-grid { display:grid; grid-template-columns:1.4fr .9fr; gap:16px; }
+    .eyebrow { margin:0 0 8px; font-size:12px; letter-spacing:0.08em; text-transform:uppercase; color:var(--accent); font-weight:700; }
+    .hero-proof-note { margin-top:12px; padding:14px; border-radius:14px; border:1px solid var(--line); background:linear-gradient(135deg, rgba(31,95,255,0.08), rgba(14,122,75,0.06)); }
     .lens-tabs { display:flex; flex-wrap:wrap; gap:10px; margin-top:6px; }
     .lens-tab { border:1px solid var(--line); border-radius:999px; background:#fff; color:var(--ink); padding:10px 14px; cursor:pointer; font-weight:600; }
     .lens-tab.active { background:var(--accent); color:#fff; border-color:var(--accent); }
@@ -42,9 +45,15 @@
     .cta-primary { background:var(--accent); color:#fff; border-color:var(--accent); }
     .mini-list { margin:0; padding-left:18px; }
     .split { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+    .proof-grid { display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); gap:16px; }
+    .proof-card { border:1px solid var(--line); border-radius:16px; padding:16px; background:#fcfdff; }
+    .step-list { margin:0; padding-left:18px; }
+    .step-list li + li { margin-top:8px; }
+    .route-note { margin-top:10px; font-size:13px; color:var(--muted); }
+    .signal { display:inline-flex; align-items:center; gap:8px; padding:6px 10px; border-radius:999px; background:#f4fbf7; color:var(--success); font-weight:700; font-size:13px; }
     .ad { min-height:84px; border:1px dashed var(--line); border-radius:10px; padding:8px; background:#fbfcff; }
     footer { max-width:980px; margin:0 auto; padding:0 18px 34px; color:var(--muted); font-size:14px; }
-    @media (max-width:840px) { .hero-grid, .split, .lens-grid { grid-template-columns:1fr; } }
+    @media (max-width:840px) { .hero-grid, .split, .lens-grid, .proof-grid { grid-template-columns:1fr; } }
   </style>
 <meta name="clarity-project-id" content="" />
 <meta name="gtm-container-id" content="" />
@@ -71,42 +80,97 @@
       </div>
       <div class="hero-grid">
         <div>
+          <p class="eyebrow">Reviewer continuity, not runtime theater</p>
           <h1>The Logistics Prophet</h1>
           <p>
-            Predictive logistics control tower for teams that need model scoring, explainability, quality gates,
-            and incident workflow to land in the same operational handoff.
+            Predictive logistics control tower for teams that need runtime posture, recovery proof,
+            explainability, and operator handoff to read as one reviewer path.
           </p>
           <ul class="mini-list">
-            <li>Actionable risk queue with owner / ETA workflow</li>
-            <li>Data-quality gate and audit trail verification before promotion</li>
-            <li>Evidence bundle for review, escalation, and postmortem</li>
+            <li>Actionable risk queue with owner / ETA workflow and downstream handoff guardrails</li>
+            <li>Recovery drill proof that compares baseline risk against the proposed operator plan</li>
+            <li>Evidence bundle that ties SHAP, governance, and postmortem-ready exports together</li>
           </ul>
+          <div class="hero-proof-note">
+            <span class="signal">Public site = reviewer map</span>
+            <p>
+              This public surface summarizes the proof route and copyable reviewer artifacts. It does
+              <strong>not</strong> pretend to be the live runtime; the runtime evidence lives in the app and service-health payloads.
+            </p>
+          </div>
           <div class="action-row">
             <button id="copyReviewChecklistBtn" class="cta cta-primary" type="button">Start Review</button>
             <button id="copyReviewRoutesBtn" class="cta" type="button">Copy Routes</button>
             <button id="copyRuntimeClaimBtn" class="cta" type="button">Copy Claim</button>
             <button id="copyReviewerBundleBtn" class="cta" type="button">Copy Bundle</button>
           </div>
-          <p id="reviewActionsStatus" style="margin-top:10px; font-size:13px; color:var(--muted);">Fast path: copy the review checklist first, then grab routes or the reviewer bundle as needed. Keyboard: R routes · C claim · B bundle · K checklist · ? help.</p>
+          <p id="reviewActionsStatus" style="margin-top:10px; font-size:13px; color:var(--muted);">Fast path: copy the review checklist first, then routes or the reviewer bundle. Keyboard: R routes · C claim · B bundle · K checklist · ? help.</p>
           <div class="lens-tabs" role="tablist" aria-label="logistics lens">
             <button id="lensOpsBtn" class="lens-tab active" type="button">Ops</button>
             <button id="lensDataBtn" class="lens-tab" type="button">Data</button>
             <button id="lensExecutiveBtn" class="lens-tab" type="button">Executive</button>
           </div>
           <div id="lensGrid" class="lens-grid">
-            <article class="lens-card"><strong>01 · Runtime</strong><p>Confirm posture before showing predictions or alerts.</p></article>
-            <article class="lens-card"><strong>02 · Evidence</strong><p>Use quality gates and SHAP before claiming actionability.</p></article>
-            <article class="lens-card"><strong>03 · Handoff</strong><p>End with the review pack and export bundle.</p></article>
+            <article class="lens-card"><strong>01 · Runtime posture</strong><p>Confirm service health and current watchouts before reading queue claims.</p></article>
+            <article class="lens-card"><strong>02 · Evidence</strong><p>Use quality gates, recovery deltas, and SHAP before claiming actionability.</p></article>
+            <article class="lens-card"><strong>03 · Handoff</strong><p>End with the review pack and export bundle once the story is reviewable.</p></article>
           </div>
         </div>
         <aside class="card" style="margin:0;">
           <h2>What reviewers should do first</h2>
-          <ul class="mini-list">
-            <li>Open <code>/healthz</code> to confirm runtime posture.</li>
-            <li>Inspect the runtime brief and scorecard before promotion claims.</li>
-            <li>Use the review pack for the final handoff bundle.</li>
-          </ul>
+          <ol class="step-list">
+            <li>Open <code>/healthz</code> to confirm runtime posture and current watchouts.</li>
+            <li>Inspect the runtime brief and scorecard before trusting promotion or actionability claims.</li>
+            <li>Check the recovery drill summary before saying the queue is stable enough to hand off.</li>
+            <li>Use the review pack for the final bundle, audit chain, and downstream reviewer handoff.</li>
+          </ol>
+          <p class="route-note">Reviewer continuity: posture → scorecard → recovery delta → review pack.</p>
         </aside>
+      </div>
+    </section>
+
+    <section class="proof-grid" aria-label="proof route overview">
+      <section class="card proof-card">
+        <h2>Recovery proof route</h2>
+        <ol class="step-list">
+          <li><code>/healthz</code> confirms posture and links the compact reviewer snapshot.</li>
+          <li><code>/api/runtime/brief</code> and <code>/api/runtime/scorecard</code> frame model and audit readiness.</li>
+          <li>The recovery drill summary compares baseline queue risk against the proposed operator plan.</li>
+        </ol>
+      </section>
+      <section class="card proof-card">
+        <h2>Why SHAP is paired with actionability</h2>
+        <ul class="mini-list">
+          <li>SHAP explains why the shipment or lane is risky.</li>
+          <li>Quality gates and semantic evidence show the explanation is grounded.</li>
+          <li>Owner / ETA workflow proves the recommendation can be acted on before handoff.</li>
+        </ul>
+      </section>
+      <section class="card proof-card">
+        <h2>Honest public-site contract</h2>
+        <p>
+          The public site is a reviewer-facing summary and routing aid. It mirrors the runtime proof sequence,
+          but it does not claim that the static page is the operational console itself.
+        </p>
+        <p class="route-note">Use the README reviewer path and review pack export when forwarding the story outside the product team.</p>
+      </section>
+    </section>
+
+    <section class="card">
+      <h2>What to show once one risky lane is selected</h2>
+      <div class="lens-grid" style="margin-top: 12px;">
+        <article class="lens-card">
+          <strong>01 · Baseline risk</strong>
+          <p>Start with the pre-recovery posture so the reviewer sees why this lane needs intervention at all.</p>
+        </article>
+        <article class="lens-card">
+          <strong>02 · Recovery delta</strong>
+          <p>Use the recovery drill and SHAP evidence together, so “why this works” and “what changed” stay connected.</p>
+        </article>
+        <article class="lens-card">
+          <strong>03 · Review-ready handoff</strong>
+          <p>Finish with the review pack and export path once owner, ETA, and postmortem posture all agree.</p>
+        </article>
       </div>
     </section>
 
@@ -115,8 +179,8 @@
         <h2>Review Signals</h2>
         <ul class="mini-list">
           <li>Clear purpose and original content</li>
-          <li>Public policy / contact / compliance pages</li>
-          <li>Crawlable site artifacts (`ads.txt`, `robots.txt`, `sitemap.xml`)</li>
+          <li>Recovery / explainability / handoff continuity instead of isolated feature bullets</li>
+          <li>Public policy / contact / compliance pages plus crawlable site artifacts</li>
         </ul>
       </section>
       <section class="card">
@@ -189,19 +253,19 @@
     let currentLens = "ops";
     const lensConfig = {
       ops: [
-        ["01 · Runtime", "Confirm posture before showing predictions or alerts."],
-        ["02 · Evidence", "Use quality gates and SHAP before claiming actionability."],
-        ["03 · Handoff", "End with the review pack and export bundle."],
+        ["01 · Runtime posture", "Confirm service health and current watchouts before reading queue claims."],
+        ["02 · Recovery proof", "Use scorecard evidence and recovery deltas before claiming queue stability."],
+        ["03 · Handoff", "End with the review pack and export bundle once the story is reviewable."],
       ],
       data: [
-        ["01 · Quality gate", "Use data quality before any model competition claim."],
-        ["02 · Explainability", "Keep SHAP and semantic evidence visible together."],
-        ["03 · Audit trail", "Use the reviewer bundle once the evidence chain reads cleanly."],
+        ["01 · Quality gate", "Use data quality before any model competition or escalation claim."],
+        ["02 · Explainability", "Keep SHAP and semantic evidence visible together so the why stays reviewable."],
+        ["03 · Audit trail", "Use the reviewer bundle once the recovery and actionability chain reads cleanly."],
       ],
       executive: [
-        ["01 · Risk queue", "Lead with owner/ETA and risk priority instead of raw model details."],
-        ["02 · Review checklist", "Use the checklist as the executive handoff path."],
-        ["03 · Bundle", "Copy the reviewer bundle once the story is concise enough to forward."],
+        ["01 · Risk queue", "Lead with owner/ETA, top lanes, and queue stability instead of raw model internals."],
+        ["02 · Recovery story", "Show the before/after recovery delta before asking for downstream trust."],
+        ["03 · Bundle", "Copy the reviewer bundle once the summary is concise enough to forward."],
       ],
     };
 
@@ -222,7 +286,11 @@
     ];
 
     async function copyReviewRoutes() {
-      const text = ["The Logistics Prophet review routes", ...reviewRoutes.map((route) => `- ${route}`)].join("\n");
+      const text = [
+        "The Logistics Prophet review routes",
+        ...reviewRoutes.map((route) => `- ${route}`),
+        "- recovery drill summary (from service health / review pack)",
+      ].join("\n");
       const ok = await copyTextValue(text);
       if (reviewActionsStatus) {
         reviewActionsStatus.textContent = ok ? "Review routes copied." : "Failed to copy review routes.";
@@ -232,9 +300,11 @@
     async function copyRuntimeClaim() {
       const text = [
         "The Logistics Prophet runtime claim",
-        "Headline: Predictive logistics control tower with model evidence and operational governance.",
+        "Headline: Predictive logistics control tower with runtime posture, recovery proof, SHAP evidence, and operational governance.",
+        "Public-site boundary: this static page mirrors the reviewer path; it is not the live runtime UI.",
         "Proof surfaces:",
         ...reviewRoutes.map((route) => `- ${route}`),
+        "- recovery drill summary in service health / review pack",
         "- README reviewer path",
         "- Evidence pack export for review and postmortem",
       ].join("\n");
@@ -250,6 +320,7 @@
         "- Open /healthz first to confirm runtime posture.",
         "- Inspect /api/runtime/brief for trust boundary and watchouts.",
         "- Inspect /api/runtime/scorecard for evidence quality before promotion claims.",
+        "- Check the recovery drill summary before claiming the queue is stable enough to hand off.",
         "- Use /api/review-pack and the README reviewer path for the final handoff.",
       ].join("\n");
       const ok = await copyTextValue(text);
@@ -264,8 +335,10 @@
         "Quick routes:",
         ...reviewRoutes.map((route) => `- ${route}`),
         "Proof surfaces:",
+        "- recovery drill summary for baseline vs proposed operator plan",
+        "- SHAP + semantic evidence for why the queue is risky",
+        "- owner / ETA workflow for actionability before handoff",
         "- README reviewer path",
-        "- Quality gates and SHAP evidence on the static site",
         "- Evidence pack export for review and postmortem",
       ].join("\n");
       const ok = await copyTextValue(text);
