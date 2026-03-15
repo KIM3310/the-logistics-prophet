@@ -4,7 +4,7 @@ ifeq ($(wildcard $(VENV_PY)), $(VENV_PY))
 PYTHON := $(VENV_PY)
 endif
 
-.PHONY: setup run generate marts service-init users audit quality semantic train score report monitor health core-snapshot core-worklist workflow-sla incident-reco incident-reco-apply incident-reco-ollama datadog replay scenario test clean dashboard docker-build docker-up demo-local demo-local-kill demo-local-debug demo-local-open
+.PHONY: setup run generate marts service-init queue-sync users audit quality semantic train score report monitor health core-snapshot core-worklist workflow-sla incident-reco incident-reco-apply incident-reco-ollama datadog replay scenario test clean dashboard docker-build docker-up demo-local demo-local-kill demo-local-debug demo-local-open
 
 setup:
 	python3 -m venv .venv && . .venv/bin/activate && python -m pip install -U pip && python -m pip install -e ".[dev]"
@@ -20,6 +20,9 @@ marts:
 
 service-init:
 	$(PYTHON) scripts/init_service_store.py
+
+queue-sync:
+	$(PYTHON) scripts/sync_service_queue.py
 
 users:
 	$(PYTHON) scripts/manage_users.py --list
@@ -45,7 +48,7 @@ report:
 monitor:
 	$(PYTHON) scripts/export_datadog_series.py
 
-health:
+health: queue-sync
 	$(PYTHON) scripts/service_health_audit.py --warn-as-error
 
 core-snapshot:
