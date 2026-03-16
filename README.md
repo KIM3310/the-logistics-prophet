@@ -23,6 +23,11 @@ Datadog 전송은 옵션이며, 키가 없으면 dry-run/파일 출력 형태로
 - **이 레포의 역할:** 예측 모델·설명가능성·운영 콘솔을 묶는 물류 컨트롤 타워 축입니다.
 - **연결해서 볼 레포:** `Nexus-Hive`, `regulated-case-workbench`, `fab-ops-yield-control-tower`
 
+## Big-Tech Elevation Track
+
+- 실행 문서: [`docs/BIGTECH_ELEVATION_PLAN.md`](docs/BIGTECH_ELEVATION_PLAN.md)
+- 목표: 예측 모델 프로젝트가 아니라 actionability와 KPI impact까지 보여주는 decision system으로 끌어올리기
+
 ## Best target-team fit
 
 이 저장소는 예측 모델 그 자체보다 운영 컨트롤 타워, evidence pack, actionability를 중시하는 팀에 가장 강합니다.
