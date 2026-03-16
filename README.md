@@ -51,7 +51,7 @@ Datadog 전송은 옵션이며, 키가 없으면 dry-run/파일 출력 형태로
 ## Reviewer Front Door
 
 - **Recruiter / hiring manager:** `make health` -> `Executive Review Pack`.
-- **AI / data engineer:** `scripts/run_pipeline.py` -> `src/control_tower/modeling.py` -> SHAP artifacts.
+- **AI engineer / data systems:** `scripts/run_pipeline.py` -> `src/control_tower/modeling.py` -> SHAP artifacts.
 - **Solutions / field reviewer:** `Control Tower Brief` -> `Worklist` -> `Evidence Pack`.
 - **Platform / ops reviewer:** `make health` -> `Governance` -> `monitoring/datadog_dashboard.json`.
 
