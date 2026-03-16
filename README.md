@@ -1,21 +1,20 @@
 # The Logistics Prophet
 
-온톨로지 + 데이터 품질 게이트 + 모델 경쟁 실험 + SHAP 설명 + Datadog 운영 연동까지 포함한
-실서비스 스타일 내부 관제 프로젝트입니다.
+온톨로지, 데이터 품질 게이트, 모델 경쟁 실험, SHAP 설명, Datadog 운영 연동을 한 흐름으로 묶은 logistics control tower입니다.
 
 Note: 개인 포트폴리오 프로젝트입니다. 데이터는 synthetic이며 외부 API 없이도 로컬에서 재현 가능합니다.
 Datadog 전송은 옵션이며, 키가 없으면 dry-run/파일 출력 형태로 동작합니다.
 
 ## 포트폴리오 포지셔닝
 - 이 저장소는 “예측 모델을 돌렸다”보다 “운영팀이 바로 해석하고 조치할 수 있다”에 더 무게를 둔 물류 컨트롤 타워입니다.
-- 핵심 증거는 리스크 큐, SHAP 근거, SPARQL 질문, evidence pack export, 그리고 실제 운영 콘솔이 한 흐름으로 이어지는지입니다.
+- 핵심 증거는 리스크 큐, SHAP 근거, SPARQL 질문, evidence pack export, 그리고 실제 운영 콘솔이 한 흐름으로 이어지는지에 있습니다.
 - health report에는 **disruption recovery drill** 요약이 포함되어, baseline queue risk와 recovery plan 이후 delta를 reviewer가 바로 비교할 수 있습니다.
 - 빠르게 보려면 서비스 정의 -> 빠른 실행 -> Service-Grade Surfaces -> Review Flow 순서로 읽는 편이 가장 깔끔합니다.
 
 ## 커리어 시그널
 - **AI 엔지니어 관점:** 예측 모델, SHAP 근거, 온톨로지 질의를 하나의 운영 흐름으로 묶어 보여줍니다.
 - **솔루션/클라우드 아키텍트 관점:** quality gate, mart build, audit/export, optional Datadog 연동까지 설명 가능합니다.
-- **프리세일즈 / 솔루션 세일즈 관점:** 리스크 큐와 evidence pack 덕분에 가치 설명과 데모 흐름이 선명합니다.
+- **필드 / 솔루션 엔지니어 관점:** 리스크 큐와 evidence pack 덕분에 가치 설명과 데모 흐름이 선명합니다.
 
 
 ## 포트폴리오 맥락
