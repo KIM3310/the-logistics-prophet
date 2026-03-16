@@ -8,6 +8,7 @@ __pycache__/
 
 # Generated artifacts (rebuild with `python3 scripts/run_pipeline.py`)
 data/raw/
+data/service_store.db
 data/processed/
 data/output/
 data/model/
