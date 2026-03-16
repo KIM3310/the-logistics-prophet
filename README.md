@@ -23,6 +23,17 @@ Datadog 전송은 옵션이며, 키가 없으면 dry-run/파일 출력 형태로
 - **이 레포의 역할:** 예측 모델·설명가능성·운영 콘솔을 묶는 물류 컨트롤 타워 축입니다.
 - **연결해서 볼 레포:** `Nexus-Hive`, `regulated-case-workbench`, `fab-ops-yield-control-tower`
 
+## Best target-team fit
+
+이 저장소는 예측 모델 그 자체보다 운영 컨트롤 타워, evidence pack, actionability를 중시하는 팀에 가장 강합니다.
+
+| Team lens | What should stand out fast | Start here |
+|---|---|---|
+| Snowflake | mart build, data quality gate, monitored queue posture, evidence export가 함께 보입니다 | `make health`, `scripts/run_pipeline.py`, `scripts/scenario_runner.py` |
+| Databricks | model competition, SHAP explainability, ontology layer, replay 가능한 synthetic pipeline이 있습니다 | `src/control_tower/modeling.py`, `ontology/`, `scripts/train_model.py`, `scripts/build_report.py` |
+| Palantir / high-trust ops | Worklist, Governance, audit chain, incident recommendation, approval-like handoff가 명확합니다 | `app/dashboard.py`, `Governance`, `Evidence Pack`, `scripts/verify_audit.py` |
+| Big tech / SRE / platform | queue parity, workflow guardrails, auth/rbac, optional Datadog integration까지 운영 표면이 분리돼 있습니다 | `make health`, `monitoring/`, `src/control_tower/service_store.py`, `scripts/push_datadog.py` |
+
 ## Runtime vs review/site surfaces
 - Primary runtime: `scripts/` builds the pipeline and `app/dashboard.py` runs the Streamlit control tower. Start there for the working system.
 - Review/site surfaces: `site/` is the static reviewer/Pages surface, while `docs/` and `specs/` are supporting materials. Read those as recorded walkthrough assets, not as live queue state.
@@ -32,6 +43,13 @@ Datadog 전송은 옵션이며, 키가 없으면 dry-run/파일 출력 형태로
 1. `scripts/` 로 synthetic pipeline과 scorecard를 다시 만들고 현재 queue posture를 고정합니다.
 2. `app/dashboard.py` 에서 운영 콘솔·SHAP 근거·incident workflow를 같은 이야기로 확인합니다.
 3. `site/`, `docs/`, exported snapshots는 그 결과를 설명하는 recorded proof pack으로만 사용합니다.
+
+## Reviewer Front Door
+
+- **Recruiter / hiring manager:** `make health` -> `Executive Review Pack`.
+- **AI / data engineer:** `scripts/run_pipeline.py` -> `src/control_tower/modeling.py` -> SHAP artifacts.
+- **Solutions / field reviewer:** `Control Tower Brief` -> `Worklist` -> `Evidence Pack`.
+- **Platform / ops reviewer:** `make health` -> `Governance` -> `monitoring/datadog_dashboard.json`.
 
 ## Demo video
 https://www.youtube.com/watch?v=NDZKmDZ_R-w
