@@ -61,9 +61,17 @@ class TestServiceHealth(unittest.TestCase):
             report["service_meta"]["decision_board"]["contract"],
             "logistics-control-decision-board-v1",
         )
+        self.assertEqual(
+            report["service_meta"]["action_impact_board"]["contract"],
+            "logistics-control-action-impact-board-v1",
+        )
         self.assertGreaterEqual(
             report["service_meta"]["decision_board"]["summary"]["recommended_actions"],
             1,
+        )
+        self.assertGreaterEqual(
+            report["service_meta"]["action_impact_board"]["summary"]["tracked_kpis"],
+            3,
         )
         self.assertGreaterEqual(
             report["service_meta"]["runtime_scorecard"]["summary"]["runtime_score"],
@@ -83,14 +91,21 @@ class TestServiceHealth(unittest.TestCase):
         self.assertIn("proof_assets", report["service_meta"])
         self.assertIn("recovery_drill", report["service_meta"]["review_pack"]["proof_bundle"])
         self.assertIn("decision_board", report["service_meta"]["review_pack"]["proof_bundle"])
+        self.assertIn("action_impact_board", report["service_meta"]["review_pack"]["proof_bundle"])
         self.assertEqual(report["service_meta"]["proof_assets"][0]["label"], "Health Audit")
         self.assertIn("why", report["service_meta"]["proof_assets"][0])
         self.assertTrue(
             any(asset["label"] == "Decision Board" for asset in report["service_meta"]["proof_assets"])
         )
+        self.assertTrue(
+            any(asset["label"] == "Action Impact Board" for asset in report["service_meta"]["proof_assets"])
+        )
         self.assertIn("why", report["service_meta"]["review_pack"]["proof_assets"][0])
         self.assertTrue(
             any(asset["label"] == "Decision Board" for asset in report["service_meta"]["review_pack"]["proof_assets"])
+        )
+        self.assertTrue(
+            any(asset["label"] == "Action Impact Board" for asset in report["service_meta"]["review_pack"]["proof_assets"])
         )
         self.assertIn("overall_status", report)
         self.assertIn(report.get("overall_status"), {"pass", "warn", "fail"})

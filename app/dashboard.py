@@ -1037,6 +1037,7 @@ def render_service_readiness_panel(health_report: Dict[str, object]) -> None:
     report_contract = service_meta.get("report_contract", {}) if isinstance(service_meta, dict) else {}
     review_pack = service_meta.get("review_pack", {}) if isinstance(service_meta, dict) else {}
     runtime_scorecard = service_meta.get("runtime_scorecard", {}) if isinstance(service_meta, dict) else {}
+    action_impact_board = service_meta.get("action_impact_board", {}) if isinstance(service_meta, dict) else {}
     summary = health_report.get("summary", {}) if isinstance(health_report, dict) else {}
     review_flow = service_meta.get("review_flow", []) if isinstance(service_meta, dict) else []
     two_minute_review = service_meta.get("two_minute_review", []) if isinstance(service_meta, dict) else []
@@ -1215,6 +1216,25 @@ def render_service_readiness_panel(health_report: Dict[str, object]) -> None:
             ]
             st.markdown("**Runtime Scorecard Snapshot**")
             st.code("\n".join(scorecard_lines), language="text")
+
+        if action_impact_board:
+            st.caption("Action Impact Board")
+            impact_summary = (
+                action_impact_board.get("summary", {})
+                if isinstance(action_impact_board, dict)
+                else {}
+            )
+            c1, c2, c3 = st.columns(3)
+            with c1:
+                st.metric("Actions", int(impact_summary.get("recommended_actions", 0)))
+            with c2:
+                st.metric("ETA Gain (hrs)", int(impact_summary.get("eta_gain_hours", 0)))
+            with c3:
+                st.metric("Tracked KPIs", int(impact_summary.get("tracked_kpis", 0)))
+
+            kpis = action_impact_board.get("kpis", []) if isinstance(action_impact_board, dict) else []
+            if kpis:
+                st.dataframe(pd.DataFrame(kpis), use_container_width=True, height=180)
 
         if watchouts:
             st.caption("Watchouts")

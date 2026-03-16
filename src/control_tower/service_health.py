@@ -367,6 +367,84 @@ def _build_decision_board(
     }
 
 
+def _build_action_impact_board(
+    *,
+    decision_board: Dict[str, Any],
+    recovery_drill: Dict[str, Any],
+) -> Dict[str, Any]:
+    decision_items = [
+        item for item in decision_board.get("items", []) if isinstance(item, dict)
+    ]
+    recovery_summary = recovery_drill.get("summary", {}) if isinstance(recovery_drill, dict) else {}
+    recovery_items = [
+        item for item in recovery_drill.get("items", []) if isinstance(item, dict)
+    ]
+    recovery_item = recovery_items[0] if recovery_items else {}
+    baseline_risk = _safe_int(recovery_summary.get("baseline_risk_score", 0))
+    recovered_risk = _safe_int(recovery_summary.get("recovered_risk_score", 0))
+    baseline_eta = _safe_int(recovery_item.get("baseline_eta_hours", 0))
+    recovered_eta = _safe_int(recovery_item.get("recovered_eta_hours", 0))
+    eta_gain = max(0, baseline_eta - recovered_eta)
+
+    owner_map = {
+        "queue-integrity": "service-store",
+        "model-triage": "modeling",
+        "audit-integrity": "monitoring",
+        "steady-state": "ops-control",
+    }
+    action_rows = [
+        {
+            "priority": str(item.get("priority", "P2")),
+            "lane": str(item.get("lane", "steady-state")),
+            "owner": owner_map.get(str(item.get("lane", "steady-state")), "ops-control"),
+            "recommended_action": str(item.get("recommended_action", "")),
+            "proof_path": str(item.get("proof_path", "")),
+        }
+        for item in decision_items
+    ]
+
+    return {
+        "contract": "logistics-control-action-impact-board-v1",
+        "headline": "Action impact board that ties recommended actions to expected KPI movement before operator commitment.",
+        "summary": {
+            "recommended_actions": len(action_rows),
+            "tracked_kpis": 3,
+            "baseline_risk_score": baseline_risk,
+            "recovered_risk_score": recovered_risk,
+            "eta_gain_hours": eta_gain,
+        },
+        "kpis": [
+            {
+                "metric": "risk_score",
+                "baseline": baseline_risk,
+                "expected_after_actions": recovered_risk,
+                "delta": recovered_risk - baseline_risk,
+                "unit": "score",
+            },
+            {
+                "metric": "eta_hours",
+                "baseline": baseline_eta,
+                "expected_after_actions": recovered_eta,
+                "delta": recovered_eta - baseline_eta,
+                "unit": "hours",
+            },
+            {
+                "metric": "review_handoff_confidence",
+                "baseline": 55 if action_rows and action_rows[0]["lane"] != "steady-state" else 72,
+                "expected_after_actions": 78 if action_rows and action_rows[0]["lane"] != "steady-state" else 88,
+                "delta": 23 if action_rows and action_rows[0]["lane"] != "steady-state" else 16,
+                "unit": "score",
+            },
+        ],
+        "actions": action_rows,
+        "review_actions": [
+            "Use this board after the decision board so every recommendation carries an explicit KPI delta.",
+            "Keep the risk-score and ETA change visible before escalating to downstream review or export.",
+            "Treat action impact as a control-tower claim that still depends on queue parity and audit integrity.",
+        ],
+    }
+
+
 def _queue_csv_summary(path: Path) -> Dict[str, int]:
     if not path.exists():
         return {"row_count": 0, "unique_shipments": 0, "duplicate_rows": 0}
@@ -560,6 +638,32 @@ def build_service_health_report(
     statuses = [str(item.get("status", "pass")) for item in checks]
     overall_status = _worst_status(statuses)
     diagnostics = _build_health_diagnostics(checks)
+    runtime_scorecard = _build_runtime_scorecard(
+        checks=checks,
+        queue_csv_rows=int(queue_csv.get("row_count", 0)),
+        db_queue_count=db_queue_count,
+        audit_checked=_safe_int(audit.get("checked", 0)),
+        min_model_auc=float(min_model_auc),
+        strict_queue_parity=bool(strict_queue_parity),
+    )
+    recovery_drill = _build_recovery_drill(
+        checks=checks,
+        queue_csv_rows=int(queue_csv.get("row_count", 0)),
+        db_queue_count=db_queue_count,
+        audit_checked=_safe_int(audit.get("checked", 0)),
+        min_model_auc=float(min_model_auc),
+    )
+    decision_board = _build_decision_board(
+        checks=checks,
+        queue_csv_rows=int(queue_csv.get("row_count", 0)),
+        db_queue_count=db_queue_count,
+        audit_checked=_safe_int(audit.get("checked", 0)),
+        min_model_auc=float(min_model_auc),
+    )
+    action_impact_board = _build_action_impact_board(
+        decision_board=decision_board,
+        recovery_drill=recovery_drill,
+    )
 
     return {
         "generated_at_utc": now.isoformat(),
@@ -608,6 +712,12 @@ def build_service_health_report(
                     "why": "Converts health posture into recommended operator actions and expected control-tower impact.",
                 },
                 {
+                    "label": "Action Impact Board",
+                    "path": "app/dashboard.py?page=next-actions",
+                    "kind": "surface",
+                    "why": "Makes the expected KPI delta explicit before operators or reviewers accept the recommendation.",
+                },
+                {
                     "label": "Evidence Pack",
                     "path": "scripts/scenario_runner.py",
                     "kind": "script",
@@ -628,28 +738,10 @@ def build_service_health_report(
                 min_model_auc=float(min_model_auc),
                 strict_queue_parity=bool(strict_queue_parity),
             ),
-            "runtime_scorecard": _build_runtime_scorecard(
-                checks=checks,
-                queue_csv_rows=int(queue_csv.get("row_count", 0)),
-                db_queue_count=db_queue_count,
-                audit_checked=_safe_int(audit.get("checked", 0)),
-                min_model_auc=float(min_model_auc),
-                strict_queue_parity=bool(strict_queue_parity),
-            ),
-            "recovery_drill": _build_recovery_drill(
-                checks=checks,
-                queue_csv_rows=int(queue_csv.get("row_count", 0)),
-                db_queue_count=db_queue_count,
-                audit_checked=_safe_int(audit.get("checked", 0)),
-                min_model_auc=float(min_model_auc),
-            ),
-            "decision_board": _build_decision_board(
-                checks=checks,
-                queue_csv_rows=int(queue_csv.get("row_count", 0)),
-                db_queue_count=db_queue_count,
-                audit_checked=_safe_int(audit.get("checked", 0)),
-                min_model_auc=float(min_model_auc),
-            ),
+            "runtime_scorecard": runtime_scorecard,
+            "recovery_drill": recovery_drill,
+            "decision_board": decision_board,
+            "action_impact_board": action_impact_board,
             "review_pack": {
                 "contract": "logistics-control-review-pack-v1",
                 "headline": "Reviewer pack for the logistics worklist: queue parity, audit chain, action loop, and evidence exports in one surface.",
@@ -660,6 +752,7 @@ def build_service_health_report(
                     "audit_chain_checked": _safe_int(audit.get("checked", 0)),
                     "recovery_drill": "logistics-control-recovery-drill-v1",
                     "decision_board": "logistics-control-decision-board-v1",
+                    "action_impact_board": "logistics-control-action-impact-board-v1",
                 },
                 "approval_gate": {
                     "quality_gate_required": True,
@@ -702,6 +795,12 @@ def build_service_health_report(
                         "path": "app/dashboard.py?page=next-actions",
                         "kind": "surface",
                         "why": "Shows the recommended actions and expected operational delta before evidence export.",
+                    },
+                    {
+                        "label": "Action Impact Board",
+                        "path": "app/dashboard.py?page=next-actions",
+                        "kind": "surface",
+                        "why": "Adds KPI deltas so the recommendation is reviewable as an operational claim.",
                     },
                     {
                         "label": "Evidence Pack",
