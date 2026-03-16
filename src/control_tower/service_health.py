@@ -282,6 +282,91 @@ def _build_recovery_drill(
     }
 
 
+def _build_decision_board(
+    *,
+    checks: List[Dict[str, Any]],
+    queue_csv_rows: int,
+    db_queue_count: int,
+    audit_checked: int,
+    min_model_auc: float,
+) -> Dict[str, Any]:
+    queue_check = next((item for item in checks if item.get("id") == "queue_parity"), {})
+    model_check = next((item for item in checks if item.get("id") == "model_auc"), {})
+    audit_check = next((item for item in checks if item.get("id") == "audit_chain"), {})
+
+    items: List[Dict[str, Any]] = []
+    if str(queue_check.get("status", "pass")) != "pass":
+        items.append(
+            {
+                "priority": "P0",
+                "lane": "queue-integrity",
+                "recommended_action": "Rebuild the service-store queue snapshot before escalating any carrier or SLA recommendation.",
+                "expected_delta": {
+                    "queue_mismatch_rows": abs(int(queue_csv_rows) - int(db_queue_count)),
+                    "eta_confidence": "improves after parity is restored",
+                },
+                "proof_path": "make health",
+            }
+        )
+    if str(model_check.get("status", "pass")) != "pass":
+        items.append(
+            {
+                "priority": "P1",
+                "lane": "model-triage",
+                "recommended_action": "Hold automated route-priority claims and recalibrate the challenger threshold before widening operator actions.",
+                "expected_delta": {
+                    "model_auc_floor": float(min_model_auc),
+                    "risk_queue_noise_pct": "reduced after threshold recalibration",
+                },
+                "proof_path": "scripts/run_pipeline.py",
+            }
+        )
+    if str(audit_check.get("status", "pass")) != "pass":
+        items.append(
+            {
+                "priority": "P0",
+                "lane": "audit-integrity",
+                "recommended_action": "Repair the audit chain before exporting evidence packs or sharing operational recommendations.",
+                "expected_delta": {
+                    "audit_rows_checked": int(audit_checked),
+                    "reviewer_handoff": "blocked until chain is valid",
+                },
+                "proof_path": "scripts/verify_audit.py",
+            }
+        )
+    if not items:
+        items.append(
+            {
+                "priority": "P2",
+                "lane": "steady-state",
+                "recommended_action": "Advance from queue review to next-actions and watchlist ownership because health gates are currently green.",
+                "expected_delta": {
+                    "handoff_risk": "lower due to healthy queue parity and audit posture",
+                    "operator_focus": "shifts from validation to action execution",
+                },
+                "proof_path": "app/dashboard.py?page=next-actions",
+            }
+        )
+
+    return {
+        "contract": "logistics-control-decision-board-v1",
+        "headline": "Decision board that turns health checks into operator actions and expected control-tower impact.",
+        "summary": {
+            "recommended_actions": len(items),
+            "top_priority": items[0]["priority"],
+            "queue_csv_rows": int(queue_csv_rows),
+            "service_db_rows": int(db_queue_count),
+            "audit_chain_checked": int(audit_checked),
+        },
+        "items": items,
+        "review_actions": [
+            "Start with P0 lanes before opening downstream evidence packs.",
+            "Pair every recommended action with the proof path that justifies it.",
+            "Treat this board as the bridge from predictive signal to operator execution.",
+        ],
+    }
+
+
 def _queue_csv_summary(path: Path) -> Dict[str, int]:
     if not path.exists():
         return {"row_count": 0, "unique_shipments": 0, "duplicate_rows": 0}
@@ -486,6 +571,7 @@ def build_service_health_report(
             "two_minute_review": [
                 "Run `make health` to confirm pipeline freshness, quality gate, queue parity, and audit-chain integrity.",
                 "Open Control Tower Brief and validate the report contract plus current watchouts.",
+                "Open the decision board or Next Actions view before trusting operational recommendations.",
                 "Inspect Worklist or Queue + Update before trusting operator actionability claims.",
                 "Open Governance or Evidence Pack before sharing downstream review artifacts.",
             ],
@@ -514,6 +600,12 @@ def build_service_health_report(
                     "path": "app/dashboard.py?page=control-tower",
                     "kind": "surface",
                     "why": "Shows the operator worklist, queue state, governance posture, and executive brief in the same surface.",
+                },
+                {
+                    "label": "Decision Board",
+                    "path": "app/dashboard.py?page=next-actions",
+                    "kind": "surface",
+                    "why": "Converts health posture into recommended operator actions and expected control-tower impact.",
                 },
                 {
                     "label": "Evidence Pack",
@@ -551,6 +643,13 @@ def build_service_health_report(
                 audit_checked=_safe_int(audit.get("checked", 0)),
                 min_model_auc=float(min_model_auc),
             ),
+            "decision_board": _build_decision_board(
+                checks=checks,
+                queue_csv_rows=int(queue_csv.get("row_count", 0)),
+                db_queue_count=db_queue_count,
+                audit_checked=_safe_int(audit.get("checked", 0)),
+                min_model_auc=float(min_model_auc),
+            ),
             "review_pack": {
                 "contract": "logistics-control-review-pack-v1",
                 "headline": "Reviewer pack for the logistics worklist: queue parity, audit chain, action loop, and evidence exports in one surface.",
@@ -560,6 +659,7 @@ def build_service_health_report(
                     "strict_queue_parity": bool(strict_queue_parity),
                     "audit_chain_checked": _safe_int(audit.get("checked", 0)),
                     "recovery_drill": "logistics-control-recovery-drill-v1",
+                    "decision_board": "logistics-control-decision-board-v1",
                 },
                 "approval_gate": {
                     "quality_gate_required": True,
@@ -573,12 +673,14 @@ def build_service_health_report(
                 ],
                 "review_sequence": [
                     "Run `make health` and confirm pipeline freshness, quality gate, model AUC, queue parity, and audit chain.",
+                    "Open Next Actions or the decision board before discussing interventions with operators.",
                     "Open Control Tower Brief, then validate actionability in Worklist and Queue + Update.",
                     "Inspect Governance and Evidence Pack before approving downstream review or export.",
                 ],
                 "two_minute_review": [
                     "Run `make health` to confirm pipeline and audit posture.",
                     "Open Control Tower Brief for queue parity, schema, and watchouts.",
+                    "Open the decision board before trusting next-action recommendations.",
                     "Inspect Worklist or Queue + Update before trusting operations claims.",
                     "Open Governance or Evidence Pack before exporting reviewer artifacts.",
                 ],
@@ -594,6 +696,12 @@ def build_service_health_report(
                         "path": "app/dashboard.py?page=control-tower",
                         "kind": "surface",
                         "why": "Lets a reviewer compare queue parity, current actions, and trust boundaries without leaving the app.",
+                    },
+                    {
+                        "label": "Decision Board",
+                        "path": "app/dashboard.py?page=next-actions",
+                        "kind": "surface",
+                        "why": "Shows the recommended actions and expected operational delta before evidence export.",
                     },
                     {
                         "label": "Evidence Pack",

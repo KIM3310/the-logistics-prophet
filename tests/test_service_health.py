@@ -39,7 +39,7 @@ class TestServiceHealth(unittest.TestCase):
         self.assertEqual(report["service_meta"]["report_contract"]["schema"], "logistics-worklist-report-v1")
         self.assertEqual(report["service_meta"]["review_pack"]["contract"], "logistics-control-review-pack-v1")
         self.assertTrue(isinstance(report["service_meta"].get("review_flow"), list))
-        self.assertEqual(len(report["service_meta"].get("two_minute_review", [])), 4)
+        self.assertEqual(len(report["service_meta"].get("two_minute_review", [])), 5)
         self.assertTrue(isinstance(report["service_meta"].get("stages"), list))
         self.assertEqual(
             report["service_meta"]["review_summary"]["contract"],
@@ -57,6 +57,14 @@ class TestServiceHealth(unittest.TestCase):
             report["service_meta"]["recovery_drill"]["contract"],
             "logistics-control-recovery-drill-v1",
         )
+        self.assertEqual(
+            report["service_meta"]["decision_board"]["contract"],
+            "logistics-control-decision-board-v1",
+        )
+        self.assertGreaterEqual(
+            report["service_meta"]["decision_board"]["summary"]["recommended_actions"],
+            1,
+        )
         self.assertGreaterEqual(
             report["service_meta"]["runtime_scorecard"]["summary"]["runtime_score"],
             40,
@@ -70,13 +78,20 @@ class TestServiceHealth(unittest.TestCase):
             report["service_meta"]["review_summary"]["fastest_review_path"],
         )
         self.assertTrue(isinstance(report["service_meta"]["review_pack"].get("review_sequence"), list))
-        self.assertEqual(len(report["service_meta"]["review_pack"].get("two_minute_review", [])), 4)
+        self.assertEqual(len(report["service_meta"]["review_pack"].get("two_minute_review", [])), 5)
         self.assertIn("artifacts", report["service_meta"])
         self.assertIn("proof_assets", report["service_meta"])
         self.assertIn("recovery_drill", report["service_meta"]["review_pack"]["proof_bundle"])
+        self.assertIn("decision_board", report["service_meta"]["review_pack"]["proof_bundle"])
         self.assertEqual(report["service_meta"]["proof_assets"][0]["label"], "Health Audit")
         self.assertIn("why", report["service_meta"]["proof_assets"][0])
+        self.assertTrue(
+            any(asset["label"] == "Decision Board" for asset in report["service_meta"]["proof_assets"])
+        )
         self.assertIn("why", report["service_meta"]["review_pack"]["proof_assets"][0])
+        self.assertTrue(
+            any(asset["label"] == "Decision Board" for asset in report["service_meta"]["review_pack"]["proof_assets"])
+        )
         self.assertIn("overall_status", report)
         self.assertIn(report.get("overall_status"), {"pass", "warn", "fail"})
         self.assertIn("diagnostics", report)
