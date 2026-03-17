@@ -33,9 +33,9 @@ Datadog 전송은 옵션이며, 키가 없으면 dry-run/파일 출력 형태로
 
 | Team lens | What should stand out fast | Start here |
 |---|---|---|
-| Snowflake | mart build, data quality gate, monitored queue posture, evidence export가 함께 보입니다 | `make health`, `scripts/run_pipeline.py`, `scripts/scenario_runner.py` |
-| Databricks | model competition, SHAP explainability, ontology layer, replay 가능한 synthetic pipeline이 있습니다 | `src/control_tower/modeling.py`, `ontology/`, `scripts/train_model.py`, `scripts/build_report.py` |
-| Palantir / high-trust ops | Worklist, Governance, audit chain, incident recommendation, approval-like handoff가 명확합니다 | `app/dashboard.py`, `Governance`, `Evidence Pack`, `scripts/verify_audit.py` |
+| Governed analytics | mart build, data quality gate, monitored queue posture, evidence export가 함께 보입니다 | `make health`, `scripts/run_pipeline.py`, `scripts/scenario_runner.py` |
+| Lakehouse delivery | model comparison, SHAP explainability, ontology layer, replay 가능한 synthetic pipeline이 있습니다 | `src/control_tower/modeling.py`, `ontology/`, `scripts/train_model.py`, `scripts/build_report.py` |
+| High-trust ops workflows | Worklist, Governance, audit chain, incident recommendation, approval-like handoff가 명확합니다 | `app/dashboard.py`, `Governance`, `Evidence Pack`, `scripts/verify_audit.py` |
 | Big tech / SRE / platform | queue parity, workflow guardrails, auth/rbac, optional Datadog integration까지 운영 표면이 분리돼 있습니다 | `make health`, `monitoring/`, `src/control_tower/service_store.py`, `scripts/push_datadog.py` |
 
 ## Runtime vs review/site surfaces
