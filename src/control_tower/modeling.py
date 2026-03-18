@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import csv
 import json
-import pickle
+import joblib
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Dict, List, Tuple
@@ -168,13 +168,11 @@ def save_json(path: Path, payload: Dict[str, object]) -> None:
 
 def save_model_bundle(path: Path, bundle: Dict[str, object]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    with path.open("wb") as f:
-        pickle.dump(bundle, f)
+    joblib.dump(bundle, path)
 
 
 def load_model_bundle(path: Path) -> Dict[str, object]:
-    with path.open("rb") as f:
-        return pickle.load(f)
+    return joblib.load(path)
 
 
 def predict_scores(bundle: Dict[str, object], x: np.ndarray) -> np.ndarray:
