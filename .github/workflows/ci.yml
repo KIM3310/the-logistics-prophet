@@ -1,0 +1,51 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev]"
+
+      - name: Dependency check
+        run: python -m pip check
+
+      - name: Compile
+        run: |
+          python -m py_compile app/dashboard.py
+          python -m py_compile scripts/run_pipeline.py
+
+      - name: Run full verification
+        run: make verify
+
+      - name: Run tests with coverage
+        run: |
+          python -m pytest tests/ --cov=control_tower --cov-report=term-missing --cov-fail-under=40
+
+  review-gate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install ripgrep
+        run: sudo apt-get update && sudo apt-get install -y ripgrep
+
+      - name: AdSense/Cloudflare review gate
+        run: bash tools/release_ops.sh check

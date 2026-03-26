@@ -1,0 +1,10 @@
+services:
+  control_tower:
+    build: .
+    image: semantic-control-tower:latest
+    container_name: semantic-control-tower
+    ports:
+      - "8501:8501"
+    volumes:
+      - ./data:/app/data
+    restart: unless-stopped

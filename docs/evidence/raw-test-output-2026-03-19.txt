@@ -1,0 +1,25 @@
+the-logistics-prophet test run — 2026-03-19
+Runner: pytest 8.3.5
+Platform: darwin (macOS), Python 3.11.15
+
+============================= test session starts ==============================
+platform darwin -- Python 3.11.15, pytest-8.3.5, pluggy-1.6.0
+rootdir: /Users/doeonkim/repo-audit/the-logistics-prophet
+configfile: pyproject.toml
+plugins: anyio-4.12.1, langsmith-0.7.20
+collected 44 items
+
+tests/test_auth_rbac_audit.py ......                                     [ 13%]
+tests/test_frontend_metadata.py ...                                      [ 20%]
+tests/test_incident_llm.py .....                                         [ 31%]
+tests/test_model_artifact.py .                                           [ 34%]
+tests/test_pipeline_lock.py ....                                         [ 43%]
+tests/test_pipeline_smoke.py ..                                          [ 47%]
+tests/test_quality_semantic.py ..                                        [ 52%]
+tests/test_queue_sync.py ..                                              [ 56%]
+tests/test_semantic_queries.py .                                         [ 59%]
+tests/test_service_health.py ..                                          [ 63%]
+tests/test_service_store.py ...............                              [ 97%]
+tests/test_synthetic_anchor.py .                                         [100%]
+
+======================== 44 passed in 100.96s (0:01:40) ========================

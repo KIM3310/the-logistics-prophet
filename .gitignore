@@ -1,0 +1,21 @@
+__pycache__/
+*.pyc
+*.egg-info/
+.DS_Store
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+.venv/
+.venv*/
+.env
+
+# Generated artifacts (rebuild with `python3 scripts/run_pipeline.py`)
+data/raw/
+data/service_store.db
+data/processed/
+data/output/
+data/model/
+data/semantic/
+.codex_runs/
+.omc/

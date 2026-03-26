@@ -1,0 +1,576 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="The Logistics Prophet | Predictive Control Tower">
+  <meta property="og:description" content="Predictive logistics control tower with runtime posture, recovery analysis, SHAP evidence, and operational governance.">
+  <meta property="og:image" content="/preview-card.svg">
+  <meta property="og:image:alt" content="The Logistics Prophet review card for predictive control-tower output panels">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="The Logistics Prophet | Predictive Control Tower">
+  <meta name="twitter:description" content="Predictive logistics control tower with runtime posture, recovery analysis, SHAP evidence, and operational governance.">
+  <meta name="twitter:image" content="/preview-card.svg">
+  <meta name="google-adsense-account" content="" />
+  <title>The Logistics Prophet | Predictive Control Tower</title>
+  <meta name="description" content="Predictive logistics control tower with a user-facing path for recovery proof, SHAP evidence, actionability checks, and handoff governance." />
+  <style>
+    :root { --bg:#eef3fb; --card:#fff; --line:#d8dfef; --ink:#10203f; --muted:#4e5f82; --accent:#1f5fff; --soft:#eaf0ff; --success:#0e7a4b; }
+    * { box-sizing:border-box; }
+    html { scroll-behavior:smooth; }
+    body { margin:0; font-family: ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,sans-serif; background:radial-gradient(circle at top left, rgba(31,95,255,0.08), transparent 28%), var(--bg); color:var(--ink); }
+    header { padding:18px 22px; border-bottom:1px solid var(--line); background:rgba(255,255,255,0.88); backdrop-filter: blur(10px); position:sticky; top:0; z-index:10; }
+    nav { display:flex; gap:14px; flex-wrap:wrap; font-size:14px; align-items:center; }
+    nav a { color:var(--accent); text-decoration:none; }
+    main { max-width:1080px; margin:0 auto; padding:26px 18px 42px; display:grid; gap:16px; }
+    .card { background:var(--card); border:1px solid var(--line); border-radius:18px; padding:18px; box-shadow:0 18px 40px rgba(16,32,63,0.06); }
+    h1,h2,h3 { margin:0 0 10px; }
+    p,li { line-height:1.56; color:var(--muted); }
+    code { font-family: ui-monospace,SFMono-Regular,Menlo,monospace; }
+    .hero { display:grid; gap:14px; }
+    .hero-top { display:flex; flex-wrap:wrap; gap:10px; align-items:center; }
+    .pill { display:inline-flex; align-items:center; padding:8px 12px; border-radius:999px; background:var(--soft); color:var(--accent); font-size:13px; font-weight:700; }
+    .hero-grid { display:grid; grid-template-columns:1.4fr .9fr; gap:16px; }
+    .eyebrow { margin:0 0 8px; font-size:12px; letter-spacing:0.08em; text-transform:uppercase; color:var(--accent); font-weight:700; }
+    .hero-proof-note { margin-top:12px; padding:14px; border-radius:14px; border:1px solid var(--line); background:linear-gradient(135deg, rgba(31,95,255,0.08), rgba(14,122,75,0.06)); }
+    .lane-focus { margin-top:14px; display:grid; gap:12px; padding:16px; border:1px solid var(--line); border-radius:16px; background:#fcfdff; }
+    .lane-focus-grid { display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); gap:12px; }
+    .lane-focus-card { border:1px solid var(--line); border-radius:14px; padding:14px; background:#fff; }
+    .lane-focus-card strong { display:block; margin-bottom:8px; }
+    .lane-focus-actions { display:flex; flex-wrap:wrap; gap:10px; }
+    .lane-focus-status { font-size:13px; color:var(--muted); }
+    .lane-focus-toggle.active { background:var(--accent); color:#fff; border-color:var(--accent); }
+    .lens-tabs { display:flex; flex-wrap:wrap; gap:10px; margin-top:6px; }
+    .lens-tab { border:1px solid var(--line); border-radius:999px; background:#fff; color:var(--ink); padding:10px 14px; cursor:pointer; font-weight:600; }
+    .lens-tab.active { background:var(--accent); color:#fff; border-color:var(--accent); }
+    .lens-grid { display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); gap:12px; margin-top:12px; }
+    .lens-card { border:1px solid var(--line); border-radius:14px; padding:14px; background:#fff; }
+    .lens-card strong { display:block; margin-bottom:8px; }
+    .action-row { display:flex; gap:10px; flex-wrap:wrap; margin-top:6px; }
+    .action-stack { display:grid; gap:10px; }
+    .action-details { padding:12px 14px; border:1px solid var(--line); border-radius:14px; background:#fcfdff; }
+    .action-details summary { cursor:pointer; font-weight:600; }
+    .action-details[open] summary { margin-bottom:10px; }
+    .cta { border:1px solid var(--line); border-radius:999px; background:#fff; color:var(--ink); padding:10px 14px; cursor:pointer; font-weight:600; }
+    .cta-primary { background:var(--accent); color:#fff; border-color:var(--accent); }
+    .mini-list { margin:0; padding-left:18px; }
+    .split { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+    .proof-grid { display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); gap:16px; }
+    .proof-card { border:1px solid var(--line); border-radius:16px; padding:16px; background:#fcfdff; }
+    .step-list { margin:0; padding-left:18px; }
+    .step-list li + li { margin-top:8px; }
+    .route-note { margin-top:10px; font-size:13px; color:var(--muted); }
+    .signal { display:inline-flex; align-items:center; gap:8px; padding:6px 10px; border-radius:999px; background:#f4fbf7; color:var(--success); font-weight:700; font-size:13px; }
+    .ad { min-height:84px; border:1px dashed var(--line); border-radius:10px; padding:8px; background:#fbfcff; }
+    footer { max-width:980px; margin:0 auto; padding:0 18px 34px; color:var(--muted); font-size:14px; }
+    @media (max-width:840px) { .hero-grid, .split, .lens-grid, .proof-grid, .lane-focus-grid { grid-template-columns:1fr; } }
+    @media (max-width:480px) {
+      nav { gap:8px; }
+      nav a { padding:6px 4px; font-size:13px; }
+      .action-row { flex-direction:column; }
+      .action-row .cta { width:100%; text-align:center; }
+      .lane-focus-actions { flex-direction:column; }
+      .lane-focus-actions .cta { width:100%; text-align:center; }
+      .lens-tabs { gap:6px; }
+      .lens-tab { padding:8px 10px; font-size:13px; }
+    }
+
+    /* Skip link */
+    .skip-link { position:absolute; top:-100%; left:1rem; z-index:100; padding:8px 14px; border-radius:999px; background:var(--accent); color:#fff; font-weight:600; text-decoration:none; transition:top 0.2s ease; }
+    .skip-link:focus { top:0.5rem; }
+
+    /* Focus visible */
+    a:focus-visible, button:focus-visible, [tabindex]:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+
+    /* Button active state */
+    .cta:active:not(:disabled) { transform:scale(0.97); }
+
+    /* Button loading */
+    .cta-loading { position:relative; pointer-events:none; color:transparent !important; }
+    .cta-loading::after { content:""; position:absolute; width:16px; height:16px; top:50%; left:50%; margin:-8px 0 0 -8px; border:2px solid rgba(31,95,255,0.2); border-top-color:var(--accent); border-radius:50%; animation:lp-spin 0.6s linear infinite; }
+    @keyframes lp-spin { to { transform:rotate(360deg); } }
+
+    /* Toast */
+    .toast { position:fixed; bottom:1rem; left:50%; transform:translateX(-50%) translateY(120%); z-index:100; padding:10px 20px; border-radius:14px; background:rgba(16,32,63,0.94); color:#fff; font-size:14px; pointer-events:none; opacity:0; transition:transform 0.3s ease, opacity 0.3s ease; }
+    .toast.is-visible { transform:translateX(-50%) translateY(0); opacity:1; }
+
+    /* Better card hover */
+    .proof-card { transition: box-shadow 0.2s ease, transform 0.2s ease; }
+    .proof-card:hover { box-shadow:0 22px 48px rgba(16,32,63,0.10); transform:translateY(-2px); }
+  </style>
+<meta name="clarity-project-id" content="" />
+<meta name="gtm-container-id" content="" />
+<meta name="analytics-require-consent" content="false" />
+</head>
+<body>
+  <a class="skip-link" href="#laneFocusPanel">Skip to content</a>
+  <header>
+    <nav>
+      <a href="./index.html">Home</a>
+      <a href="./about.html">About</a>
+      <a href="./privacy.html">Privacy</a>
+      <a href="./terms.html">Terms</a>
+      <a href="./contact.html">Contact</a>
+      <a href="./compliance.html">Compliance</a>
+      <a href="https://github.com/KIM3310/the-logistics-prophet">GitHub</a>
+    </nav>
+  </header>
+  <main>
+    <section class="card hero">
+      <div class="hero-top">
+        <span class="pill">predictive control tower</span>
+        <span class="pill">quality gates + SHAP evidence</span>
+        <span class="pill">review-ready handoff</span>
+      </div>
+      <div class="hero-grid">
+        <div>
+          <p class="eyebrow">Verification continuity</p>
+          <h1>The Logistics Prophet</h1>
+          <p>
+            Predictive logistics control tower for teams that need runtime posture, recovery proof,
+            explainability, and operator handoff to read as one walkthrough.
+          </p>
+          <ul class="mini-list">
+            <li>Actionable risk queue with owner / ETA workflow and downstream handoff guardrails</li>
+            <li>Recovery drill proof that compares baseline risk against the proposed operator plan</li>
+            <li>Evidence bundle that ties SHAP, governance, and postmortem-ready exports together</li>
+          </ul>
+          <div class="hero-proof-note">
+            <span class="signal">Public site = status map</span>
+            <p>
+              This public surface summarizes the proof route and copyable output artifacts. It does
+              <strong>not</strong> pretend to be the live runtime; the runtime evidence lives in the app and service-health payloads.
+            </p>
+          </div>
+          <div class="action-stack">
+            <div class="action-row">
+              <button id="copyReviewChecklistBtn" class="cta cta-primary" type="button">Start Review</button>
+              <button id="copyReviewRoutesBtn" class="cta" type="button">Copy Routes</button>
+            </div>
+            <details class="action-details">
+              <summary>More copy actions</summary>
+              <div class="action-row">
+                <button id="copyRuntimeClaimBtn" class="cta" type="button">Copy Claim</button>
+                <button id="copySummaryBundleBtn" class="cta" type="button">Copy Bundle</button>
+              </div>
+            </details>
+          </div>
+          <p id="reviewActionsStatus" style="margin-top:10px; font-size:13px; color:var(--muted);">Fast path: start with the checklist, then copy routes. Open More copy actions only when you need a claim block or the full bundle. Keyboard: R routes · C claim · B bundle · K checklist · ? help.</p>
+          <section class="lane-focus" id="laneFocusPanel">
+            <div>
+              <p class="eyebrow" style="margin-bottom:6px;">One-lane continuity</p>
+              <h2 id="laneFocusTitle">Hold one risky lane from baseline through handoff.</h2>
+              <p id="laneFocusSummary" class="lane-focus-status">Pick the lane you want to narrate, then keep its proof route and next action visible without jumping around the page.</p>
+            </div>
+            <div class="lane-focus-grid">
+              <article class="lane-focus-card"><strong id="laneFocusSignal">Baseline risk is still the anchor.</strong><p id="laneFocusRoute">Route: /healthz → /api/runtime/brief → /api/runtime/scorecard</p></article>
+              <article class="lane-focus-card"><strong id="laneFocusAction">Next move: confirm the lane still needs intervention.</strong><p id="laneFocusProof">Proof: runtime posture, queue signal, and watchouts stay together first.</p></article>
+              <article class="lane-focus-card"><strong>Copyable lane note</strong><p id="laneFocusCopyNote">Use Copy Lane Note once the lane story is concise enough to forward.</p></article>
+            </div>
+            <div class="lane-focus-actions">
+              <button id="focusBaselineBtn" class="cta lane-focus-toggle active" type="button">Baseline</button>
+              <button id="focusRecoveryBtn" class="cta lane-focus-toggle" type="button">Recovery</button>
+              <button id="focusHandoffBtn" class="cta lane-focus-toggle" type="button">Handoff</button>
+              <button id="copyLaneFocusBtn" class="cta" type="button">Copy Lane Note</button>
+            </div>
+            <p id="laneFocusStatus" class="lane-focus-status">Lane focus starts on baseline risk so the recovery story has context.</p>
+            <p id="laneFocusGuard" class="lane-focus-status">Lane continuity stays blocked until owner, ETA, and proof route all match the same lane.</p>
+            <div class="hero-proof-note" id="proofFreshnessPanel">
+              <strong id="proofFreshnessSignal">Proof freshness matters: rerun health and review-pack export before forwarding stale lane copy.</strong>
+              <p id="proofFreshnessRoute" class="route-note">Fresh route: /healthz → /api/runtime/brief → /api/review-pack → evidence pack export.</p>
+            </div>
+          </section>
+          <div class="lens-tabs" role="tablist" aria-label="logistics lens">
+            <button id="lensOpsBtn" class="lens-tab active" type="button">Ops</button>
+            <button id="lensDataBtn" class="lens-tab" type="button">Data</button>
+            <button id="lensExecutiveBtn" class="lens-tab" type="button">Executive</button>
+          </div>
+          <div id="lensGrid" class="lens-grid">
+            <article class="lens-card"><strong>01 · Runtime posture</strong><p>Confirm service health and current watchouts before reading queue claims.</p></article>
+            <article class="lens-card"><strong>02 · Evidence</strong><p>Use quality gates, recovery deltas, and SHAP before claiming actionability.</p></article>
+            <article class="lens-card"><strong>03 · Handoff</strong><p>End with the summary bundle and export bundle once the story is reviewable.</p></article>
+          </div>
+        </div>
+        <aside class="card" style="margin:0;">
+          <h2>Recommended verification order</h2>
+          <ol class="step-list">
+            <li>Open <code>/healthz</code> to confirm runtime posture and current watchouts.</li>
+            <li>Inspect the runtime brief and scorecard before trusting promotion or actionability claims.</li>
+            <li>Check the recovery drill summary before saying the queue is stable enough to hand off.</li>
+            <li>Use the summary bundle for the final bundle, audit chain, and downstream handoff.</li>
+          </ol>
+          <p class="route-note">Verification continuity: posture → scorecard → recovery delta → summary bundle.</p>
+        </aside>
+      </div>
+    </section>
+
+    <section class="proof-grid" aria-label="proof route overview">
+      <section class="card proof-card">
+        <h2>Recovery proof route</h2>
+        <ol class="step-list">
+          <li><code>/healthz</code> confirms posture and links the compact reviewer snapshot.</li>
+          <li><code>/api/runtime/brief</code> and <code>/api/runtime/scorecard</code> frame model and audit readiness.</li>
+          <li>The recovery drill summary compares baseline queue risk against the proposed operator plan.</li>
+        </ol>
+      </section>
+      <section class="card proof-card">
+        <h2>Why SHAP is paired with actionability</h2>
+        <ul class="mini-list">
+          <li>SHAP explains why the shipment or lane is risky.</li>
+          <li>Quality gates and semantic evidence show the explanation is grounded.</li>
+          <li>Owner / ETA workflow proves the recommendation can be acted on before handoff.</li>
+        </ul>
+      </section>
+      <section class="card proof-card">
+        <h2>Honest public-site contract</h2>
+        <p>
+          The public site is a user-facing summary and routing aid. It mirrors the runtime proof sequence,
+          but it does not claim that the static page is the operational console itself.
+        </p>
+        <p class="route-note">Use the README walkthrough and summary bundle export when forwarding the story outside the product team.</p>
+      </section>
+    </section>
+
+    <section class="card">
+      <h2>What to show once one risky lane is selected</h2>
+      <div class="lens-grid" style="margin-top: 12px;">
+        <article class="lens-card">
+          <strong>01 · Baseline risk</strong>
+          <p>Start with the pre-recovery posture so the reviewer sees why this lane needs intervention at all.</p>
+        </article>
+        <article class="lens-card">
+          <strong>02 · Recovery delta</strong>
+          <p>Use the recovery drill and SHAP evidence together, so “why this works” and “what changed” stay connected.</p>
+        </article>
+        <article class="lens-card">
+          <strong>03 · Review-ready handoff</strong>
+          <p>Finish with the summary bundle and export path once owner, ETA, and postmortem posture all agree.</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="split">
+      <section class="card">
+        <h2>Review Signals</h2>
+        <ul class="mini-list">
+          <li>Clear purpose and original content</li>
+          <li>Recovery / explainability / handoff continuity instead of isolated feature bullets</li>
+          <li>Public policy / contact / compliance pages plus crawlable site artifacts</li>
+        </ul>
+      </section>
+      <section class="card">
+        <h2>Public-site note</h2>
+        <p>This public site stays lightweight on purpose. Ads remain disabled until a real publisher ID and slot are configured.</p>
+        <div class="ad">
+          <ins class="adsbygoogle" style="display:block" data-ad-client="" data-ad-slot="" data-ad-format="auto" data-full-width-responsive="true"></ins>
+        </div>
+      </section>
+    </section>
+  </main>
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <footer>
+    <p>&copy; <span id="currentYear"></span> The Logistics Prophet. All rights reserved.</p>
+    <p>Contact: <a href="https://github.com/KIM3310/the-logistics-prophet/issues">GitHub Issues</a></p>
+  </footer>
+  <script>
+    function validAdSenseClient(value) {
+      return /^ca-pub-\d{16}$/.test(value || "") && value !== "ca-pub-0000000000000000";
+    }
+    function validAdSenseSlot(value) {
+      return /^\d{8,20}$/.test(value || "") && value !== "1234567890";
+    }
+    (function initializeAdsense() {
+      const adNode = document.querySelector(".adsbygoogle");
+      if (!adNode) return;
+      const client = String(adNode.getAttribute("data-ad-client") || "").trim();
+      const slot = String(adNode.getAttribute("data-ad-slot") || "").trim();
+      if (!validAdSenseClient(client) || !validAdSenseSlot(slot)) return;
+      const script = document.createElement("script");
+      script.async = true;
+      script.src = `https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${encodeURIComponent(client)}`;
+      script.crossOrigin = "anonymous";
+      script.onload = function () {
+        try { (window.adsbygoogle = window.adsbygoogle || []).push({}); } catch (_err) {}
+      };
+      document.head.appendChild(script);
+    })();
+
+    async function copyTextValue(text) {
+      if (!text) return false;
+      try {
+        if (navigator.clipboard?.writeText) {
+          await navigator.clipboard.writeText(text);
+          return true;
+        }
+      } catch (_err) {
+        // Fallback below.
+      }
+
+      try {
+        const helper = document.createElement("textarea");
+        helper.value = text;
+        helper.style.position = "fixed";
+        helper.style.opacity = "0";
+        document.body.appendChild(helper);
+        helper.focus();
+        helper.select();
+        const ok = document.execCommand("copy");
+        document.body.removeChild(helper);
+        return Boolean(ok);
+      } catch (_err) {
+        return false;
+      }
+    }
+
+    function showToast(message, duration) {
+      duration = duration || 2400;
+      var toast = document.getElementById("toast");
+      if (!toast) return;
+      toast.textContent = message;
+      toast.classList.add("is-visible");
+      clearTimeout(toast._timer);
+      toast._timer = setTimeout(function () { toast.classList.remove("is-visible"); }, duration);
+    }
+
+    const reviewActionsStatus = document.getElementById("reviewActionsStatus");
+    const lensGrid = document.getElementById("lensGrid");
+    const lensOpsBtn = document.getElementById("lensOpsBtn");
+    const lensDataBtn = document.getElementById("lensDataBtn");
+    const lensExecutiveBtn = document.getElementById("lensExecutiveBtn");
+    let currentLens = "ops";
+    const lensConfig = {
+      ops: [
+        ["01 · Runtime posture", "Confirm service health and current watchouts before reading queue claims."],
+        ["02 · Recovery proof", "Use scorecard evidence and recovery deltas before claiming queue stability."],
+        ["03 · Handoff", "End with the summary bundle and export bundle once the story is reviewable."],
+      ],
+      data: [
+        ["01 · Quality gate", "Use data quality before any model competition or escalation claim."],
+        ["02 · Explainability", "Keep SHAP and semantic evidence visible together so the why stays reviewable."],
+        ["03 · Audit trail", "Use the summary bundle once the recovery and actionability chain reads cleanly."],
+      ],
+      executive: [
+        ["01 · Risk queue", "Lead with owner/ETA, top lanes, and queue stability instead of raw model internals."],
+        ["02 · Recovery story", "Show the before/after recovery delta before asking for downstream trust."],
+        ["03 · Bundle", "Copy the summary bundle once the summary is concise enough to forward."],
+      ],
+    };
+
+    function renderLensGrid() {
+      const cards = lensConfig[currentLens];
+      if (!cards || !lensGrid) return;
+      lensGrid.innerHTML = cards.map(([title, body]) => `<article class="lens-card"><strong>${title}</strong><p>${body}</p></article>`).join("");
+      [lensOpsBtn, lensDataBtn, lensExecutiveBtn].forEach((btn) => btn?.classList.remove("active"));
+      if (currentLens === "ops") lensOpsBtn?.classList.add("active");
+      if (currentLens === "data") lensDataBtn?.classList.add("active");
+      if (currentLens === "executive") lensExecutiveBtn?.classList.add("active");
+    }
+    const reviewRoutes = [
+      "/healthz",
+      "/api/runtime/brief",
+      "/api/runtime/scorecard",
+      "/api/review-pack",
+    ];
+    const laneFocusConfig = {
+      baseline: {
+        freshness: 'Proof freshness matters: rerun health and review-pack export before forwarding stale lane copy.',
+        freshnessRoute: 'Fresh route: /healthz → /api/runtime/brief → /api/review-pack → evidence pack export.',
+        title: 'Hold one risky lane from baseline through handoff.',
+        summary: 'Start with posture and queue risk before you explain any operator plan.',
+        signal: 'Baseline risk is still the anchor.',
+        route: 'Route: /healthz → /api/runtime/brief → /api/runtime/scorecard',
+        action: 'Next move: confirm the lane still needs intervention.',
+        proof: 'Proof: runtime posture, queue signal, and watchouts stay together first.',
+        status: 'Lane focus starts on baseline risk so the recovery story has context.',
+        guard: 'Lane continuity stays blocked until owner, ETA, and proof route all match the same baseline lane.',
+      },
+      recovery: {
+        freshness: 'Recovery proof should be re-copied after the latest scorecard and drill summary are both visible.',
+        freshnessRoute: 'Fresh route: /api/runtime/scorecard → recovery drill summary → /api/review-pack.',
+        title: 'Switch into the recovery delta without losing the same lane.',
+        summary: 'Once the baseline is clear, move into before/after proof for the exact lane you are trying to stabilize.',
+        signal: 'Recovery delta explains what changed.',
+        route: 'Route: /api/runtime/scorecard → recovery drill summary → /api/review-pack',
+        action: 'Next move: compare baseline risk against the proposed operator plan.',
+        proof: 'Proof: recovery delta and SHAP evidence stay connected for the same lane.',
+        status: 'Recovery focus is active. Keep delta proof attached before you summarize trust.',
+        guard: 'Lane continuity stays blocked until recovery owner, ETA, and proof route still describe the same lane.',
+      },
+      handoff: {
+        freshness: 'Handoff copy should only leave the page after health, summary bundle, and export bundle were refreshed together.',
+        freshnessRoute: 'Fresh route: /api/review-pack → evidence pack export → downstream handoff.',
+        title: 'Finish with a review-ready handoff, not a floating proof snippet.',
+        summary: 'Close the lane with the owner, ETA, and summary bundle once the route has been proven.',
+        signal: 'Handoff closes the same lane cleanly.',
+        route: 'Route: /api/review-pack → evidence pack export → downstream handoff',
+        action: 'Next move: copy the summary bundle only after owner and ETA read clearly.',
+        proof: 'Proof: bundle, audit posture, and postmortem path all point to the same lane.',
+        status: 'Handoff focus is active. This is the forwarding view, not the discovery view.',
+        guard: 'Lane continuity stays blocked until handoff owner, ETA, and proof bundle all match the same lane.',
+      },
+    };
+
+    async function copyReviewRoutes() {
+      const text = [
+        "The Logistics Prophet review routes",
+        ...reviewRoutes.map((route) => `- ${route}`),
+        "- recovery drill summary (from service health / summary bundle)",
+      ].join("\n");
+      const ok = await copyTextValue(text);
+      if (reviewActionsStatus) {
+        reviewActionsStatus.textContent = ok ? "Review routes copied." : "Failed to copy review routes.";
+      }
+      showToast(ok ? "Review routes copied" : "Copy failed");
+    }
+
+    async function copyRuntimeClaim() {
+      const text = [
+        "The Logistics Prophet runtime claim",
+        "Headline: Predictive logistics control tower with runtime posture, recovery proof, SHAP evidence, and operational governance.",
+        "Public-site boundary: this static page mirrors the walkthrough; it is not the live runtime UI.",
+        "Proof surfaces:",
+        ...reviewRoutes.map((route) => `- ${route}`),
+        "- recovery drill summary in service health / summary bundle",
+        "- README walkthrough",
+        "- Evidence pack export for review and postmortem",
+      ].join("\n");
+      const ok = await copyTextValue(text);
+      if (reviewActionsStatus) {
+        reviewActionsStatus.textContent = ok ? "Runtime claim copied." : "Failed to copy runtime claim.";
+      }
+    }
+
+    async function copyReviewChecklist() {
+      const text = [
+        "The Logistics Prophet review checklist",
+        "- Open /healthz first to confirm runtime posture.",
+        "- Inspect /api/runtime/brief for trust boundary and watchouts.",
+        "- Inspect /api/runtime/scorecard for evidence quality before promotion claims.",
+        "- Check the recovery drill summary before claiming the queue is stable enough to hand off.",
+        "- Use /api/review-pack and the README walkthrough for the final handoff.",
+      ].join("\n");
+      const ok = await copyTextValue(text);
+      if (reviewActionsStatus) {
+        reviewActionsStatus.textContent = ok ? "Review checklist copied." : "Failed to copy review checklist.";
+      }
+    }
+
+    async function copySummaryBundle() {
+      const text = [
+        "The Logistics Prophet summary bundle",
+        "Quick routes:",
+        ...reviewRoutes.map((route) => `- ${route}`),
+        "Proof surfaces:",
+        "- recovery drill summary for baseline vs proposed operator plan",
+        "- SHAP + semantic evidence for why the queue is risky",
+        "- owner / ETA workflow for actionability before handoff",
+        "- README walkthrough",
+        "- Evidence pack export for review and postmortem",
+      ].join("\n");
+      const ok = await copyTextValue(text);
+      if (reviewActionsStatus) {
+        reviewActionsStatus.textContent = ok ? "Summary bundle copied." : "Failed to copy summary bundle.";
+      }
+    }
+
+    const laneFocusTitle = document.getElementById("laneFocusTitle");
+    const laneFocusSummary = document.getElementById("laneFocusSummary");
+    const laneFocusSignal = document.getElementById("laneFocusSignal");
+    const laneFocusRoute = document.getElementById("laneFocusRoute");
+    const laneFocusAction = document.getElementById("laneFocusAction");
+    const laneFocusProof = document.getElementById("laneFocusProof");
+    const laneFocusStatus = document.getElementById("laneFocusStatus");
+    const laneFocusGuard = document.getElementById("laneFocusGuard");
+    const laneFocusCopyNote = document.getElementById("laneFocusCopyNote");
+    const proofFreshnessSignal = document.getElementById("proofFreshnessSignal");
+    const proofFreshnessRoute = document.getElementById("proofFreshnessRoute");
+    let currentLaneFocus = "baseline";
+
+    function renderLaneFocus() {
+      const lane = laneFocusConfig[currentLaneFocus];
+      if (!lane) return;
+      if (laneFocusTitle) laneFocusTitle.textContent = lane.title;
+      if (laneFocusSummary) laneFocusSummary.textContent = lane.summary;
+      if (laneFocusSignal) laneFocusSignal.textContent = lane.signal;
+      if (laneFocusRoute) laneFocusRoute.textContent = lane.route;
+      if (laneFocusAction) laneFocusAction.textContent = lane.action;
+      if (laneFocusProof) laneFocusProof.textContent = lane.proof;
+      if (laneFocusStatus) laneFocusStatus.textContent = lane.status;
+      if (laneFocusGuard) laneFocusGuard.textContent = lane.guard;
+      if (proofFreshnessSignal) proofFreshnessSignal.textContent = lane.freshness;
+      if (proofFreshnessRoute) proofFreshnessRoute.textContent = lane.freshnessRoute;
+      if (laneFocusCopyNote) laneFocusCopyNote.textContent = `Use Copy Lane Note once the ${currentLaneFocus} lane story is concise enough to forward.`;
+      document.querySelectorAll('.lane-focus-toggle').forEach((button) => button.classList.remove('active'));
+      if (currentLaneFocus === 'baseline') document.getElementById('focusBaselineBtn')?.classList.add('active');
+      if (currentLaneFocus === 'recovery') document.getElementById('focusRecoveryBtn')?.classList.add('active');
+      if (currentLaneFocus === 'handoff') document.getElementById('focusHandoffBtn')?.classList.add('active');
+    }
+
+    async function copyLaneFocusNote() {
+      const lane = laneFocusConfig[currentLaneFocus];
+      const ok = await copyTextValue([
+        `The Logistics Prophet ${currentLaneFocus} lane note`,
+        `Title: ${lane.title}`,
+        `Summary: ${lane.summary}`,
+        lane.route,
+        lane.action,
+        lane.proof,
+      ].join('\n'));
+      if (laneFocusStatus) laneFocusStatus.textContent = ok ? 'Lane note copied.' : 'Failed to copy lane note.';
+    }
+
+    document.getElementById("copyReviewRoutesBtn")?.addEventListener("click", copyReviewRoutes);
+    document.getElementById("copyRuntimeClaimBtn")?.addEventListener("click", copyRuntimeClaim);
+    document.getElementById("copySummaryBundleBtn")?.addEventListener("click", copySummaryBundle);
+    document.getElementById("copyReviewChecklistBtn")?.addEventListener("click", copyReviewChecklist);
+    document.getElementById("copyLaneFocusBtn")?.addEventListener("click", copyLaneFocusNote);
+    document.getElementById("focusBaselineBtn")?.addEventListener("click", () => { currentLaneFocus = "baseline"; renderLaneFocus(); });
+    document.getElementById("focusRecoveryBtn")?.addEventListener("click", () => { currentLaneFocus = "recovery"; renderLaneFocus(); });
+    document.getElementById("focusHandoffBtn")?.addEventListener("click", () => { currentLaneFocus = "handoff"; renderLaneFocus(); });
+    lensOpsBtn?.addEventListener("click", () => { currentLens = "ops"; renderLensGrid(); });
+    lensDataBtn?.addEventListener("click", () => { currentLens = "data"; renderLensGrid(); });
+    lensExecutiveBtn?.addEventListener("click", () => { currentLens = "executive"; renderLensGrid(); });
+    renderLensGrid();
+    renderLaneFocus();
+    var yearEl = document.getElementById("currentYear");
+    if (yearEl) yearEl.textContent = new Date().getFullYear();
+    document.addEventListener("keydown", (event) => {
+      const tag = String(event.target?.tagName || "").toLowerCase();
+      if (tag === "input" || tag === "textarea" || tag === "select" || event.metaKey || event.ctrlKey || event.altKey) {
+        return;
+      }
+      const key = event.key.toLowerCase();
+      if (key === "?") {
+        if (reviewActionsStatus) {
+          reviewActionsStatus.textContent = "Keyboard: R routes · C runtime claim · B summary bundle · K review checklist · ? help.";
+        }
+        return;
+      }
+      if (key === "r") {
+        event.preventDefault();
+        void copyReviewRoutes();
+      }
+      if (key === "c") {
+        event.preventDefault();
+        void copyRuntimeClaim();
+      }
+      if (key === "b") {
+        event.preventDefault();
+        void copySummaryBundle();
+      }
+      if (key === "k") {
+        event.preventDefault();
+        void copyReviewChecklist();
+      }
+      if (key === "l") {
+        event.preventDefault();
+        void copyLaneFocusNote();
+      }
+    });
+  </script>
+
+<script defer src="./analytics.js"></script>
+</body>
+</html>

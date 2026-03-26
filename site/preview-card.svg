@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630" role="img" aria-labelledby="title desc">
+  <title id="title">The Logistics Prophet preview card</title>
+  <desc id="desc">Predictive logistics control tower with data quality, model evidence, and operational governance.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0d1730" />
+      <stop offset="100%" stop-color="#182b57" />
+    </linearGradient>
+    <linearGradient id="accent" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#60a5fa" />
+      <stop offset="100%" stop-color="#f59e0b" />
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="630" rx="40" fill="url(#bg)" />
+  <circle cx="1040" cy="120" r="150" fill="#60a5fa" opacity="0.09" />
+  <circle cx="180" cy="520" r="220" fill="#f59e0b" opacity="0.12" />
+  <text x="96" y="128" fill="#bfdbfe" font-size="28" font-family="Inter, Arial, sans-serif" letter-spacing="8">PREDICTIVE CONTROL TOWER</text>
+  <text x="96" y="226" fill="#ffffff" font-size="82" font-weight="700" font-family="Inter, Arial, sans-serif">The Logistics Prophet</text>
+  <text x="96" y="304" fill="#d7e1f5" font-size="34" font-family="Inter, Arial, sans-serif">Data quality gates, model evidence, SHAP explainability, and production-ready ops workflow.</text>
+  <rect x="96" y="392" width="338" height="76" rx="24" fill="url(#accent)" opacity="0.96" />
+  <text x="132" y="440" fill="#08131f" font-size="30" font-weight="700" font-family="Inter, Arial, sans-serif">Risk queue → quality gate → export proof</text>
+</svg>

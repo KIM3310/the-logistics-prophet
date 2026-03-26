@@ -1,0 +1,211 @@
+from __future__ import annotations
+
+import subprocess
+import sys
+import unittest
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]
+SRC = ROOT / "src"
+if str(SRC) not in sys.path:
+    sys.path.insert(0, str(SRC))
+
+from control_tower.config import PIPELINE_STATUS_PATH
+from control_tower.service_health import build_service_health_report, health_exit_code
+
+
+class TestServiceHealth(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls) -> None:
+        result = subprocess.run(
+            [sys.executable, "scripts/run_pipeline.py"],
+            cwd=ROOT,
+            capture_output=True,
+            text=True,
+        )
+        if result.returncode != 0:
+            raise RuntimeError(f"Pipeline failed:\n{result.stdout}\n{result.stderr}")
+
+    def test_service_health_report_structure(self) -> None:
+        report = build_service_health_report(
+            pipeline_status_path=PIPELINE_STATUS_PATH,
+            max_pipeline_age_hours=24.0,
+            min_model_auc=0.50,
+            strict_queue_parity=True,
+        )
+        self.assertIn("service_meta", report)
+        self.assertEqual(report["service_meta"]["service"], "the-logistics-prophet")
+        self.assertEqual(
+            report["service_meta"]["readiness_contract"], "logistics-control-brief-v1"
+        )
+        self.assertEqual(
+            report["service_meta"]["report_contract"]["schema"],
+            "logistics-worklist-report-v1",
+        )
+        self.assertEqual(
+            report["service_meta"]["review_pack"]["contract"],
+            "logistics-control-review-pack-v1",
+        )
+        self.assertTrue(isinstance(report["service_meta"].get("review_flow"), list))
+        self.assertEqual(len(report["service_meta"].get("two_minute_review", [])), 5)
+        self.assertTrue(isinstance(report["service_meta"].get("stages"), list))
+        self.assertEqual(
+            report["service_meta"]["review_summary"]["contract"],
+            "logistics-control-review-summary-v1",
+        )
+        self.assertEqual(
+            report["service_meta"]["review_summary"]["summary"]["queue_csv_rows"],
+            report["service_meta"]["artifacts"]["queue_csv_rows"],
+        )
+        self.assertEqual(
+            report["service_meta"]["runtime_scorecard"]["contract"],
+            "logistics-control-runtime-scorecard-v1",
+        )
+        self.assertEqual(
+            report["service_meta"]["recovery_drill"]["contract"],
+            "logistics-control-recovery-drill-v1",
+        )
+        self.assertEqual(
+            report["service_meta"]["decision_board"]["contract"],
+            "logistics-control-decision-board-v1",
+        )
+        self.assertEqual(
+            report["service_meta"]["action_impact_board"]["contract"],
+            "logistics-control-action-impact-board-v1",
+        )
+        self.assertEqual(
+            report["service_meta"]["compact_summary"]["contract"],
+            "logistics-control-compact-summary-v1",
+        )
+        self.assertGreaterEqual(
+            report["service_meta"]["decision_board"]["summary"]["recommended_actions"],
+            1,
+        )
+        self.assertGreaterEqual(
+            report["service_meta"]["action_impact_board"]["summary"]["tracked_kpis"],
+            3,
+        )
+        self.assertGreaterEqual(
+            report["service_meta"]["runtime_scorecard"]["summary"]["runtime_score"],
+            40,
+        )
+        self.assertGreaterEqual(
+            report["service_meta"]["recovery_drill"]["summary"]["baseline_risk_score"],
+            report["service_meta"]["recovery_drill"]["summary"]["recovered_risk_score"],
+        )
+        self.assertIn(
+            "make health",
+            report["service_meta"]["review_summary"]["fastest_review_path"],
+        )
+        self.assertTrue(
+            isinstance(
+                report["service_meta"]["review_pack"].get("review_sequence"), list
+            )
+        )
+        self.assertEqual(
+            len(report["service_meta"]["review_pack"].get("two_minute_review", [])), 5
+        )
+        self.assertIn("artifacts", report["service_meta"])
+        self.assertIn("proof_assets", report["service_meta"])
+        self.assertIn(
+            "recovery_drill", report["service_meta"]["review_pack"]["proof_bundle"]
+        )
+        self.assertIn(
+            "decision_board", report["service_meta"]["review_pack"]["proof_bundle"]
+        )
+        self.assertIn(
+            "action_impact_board", report["service_meta"]["review_pack"]["proof_bundle"]
+        )
+        self.assertEqual(
+            report["service_meta"]["proof_assets"][0]["label"], "Health Audit"
+        )
+        self.assertIn("why", report["service_meta"]["proof_assets"][0])
+        self.assertTrue(
+            any(
+                asset["label"] == "Decision Board"
+                for asset in report["service_meta"]["proof_assets"]
+            )
+        )
+        self.assertTrue(
+            any(
+                asset["label"] == "Action Impact Board"
+                for asset in report["service_meta"]["proof_assets"]
+            )
+        )
+        self.assertIn("why", report["service_meta"]["review_pack"]["proof_assets"][0])
+        self.assertTrue(
+            any(
+                asset["label"] == "Decision Board"
+                for asset in report["service_meta"]["review_pack"]["proof_assets"]
+            )
+        )
+        self.assertTrue(
+            any(
+                asset["label"] == "Action Impact Board"
+                for asset in report["service_meta"]["review_pack"]["proof_assets"]
+            )
+        )
+        self.assertIn("overall_status", report)
+        self.assertIn(report.get("overall_status"), {"pass", "warn", "fail"})
+        self.assertIn("diagnostics", report)
+        self.assertIn("failing_check_ids", report["diagnostics"])
+        self.assertIn("warning_check_ids", report["diagnostics"])
+        self.assertIn("next_action", report["diagnostics"])
+        self.assertIn("checks", report)
+        self.assertTrue(isinstance(report.get("checks"), list))
+
+        checks = report.get("checks", [])
+        ids = {str(item.get("id", "")) for item in checks if isinstance(item, dict)}
+        for required in [
+            "pipeline_status",
+            "pipeline_freshness",
+            "quality_gate",
+            "model_auc",
+            "queue_parity",
+            "audit_chain",
+        ]:
+            self.assertIn(required, ids)
+
+    def test_health_exit_code(self) -> None:
+        report = build_service_health_report(
+            pipeline_status_path=PIPELINE_STATUS_PATH,
+            max_pipeline_age_hours=24.0,
+            min_model_auc=0.50,
+            strict_queue_parity=True,
+        )
+        exit_code = health_exit_code(report, warn_as_error=False)
+        self.assertEqual(exit_code, 0)
+
+    def test_service_review_surface_script_outputs_review_pack(self) -> None:
+        result = subprocess.run(
+            [
+                sys.executable,
+                "scripts/service_review_surface.py",
+                "--section",
+                "review_pack",
+            ],
+            cwd=ROOT,
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+        self.assertIn("logistics-control-review-pack-v1", result.stdout)
+
+    def test_service_review_surface_script_outputs_compact_summary(self) -> None:
+        result = subprocess.run(
+            [
+                sys.executable,
+                "scripts/service_review_surface.py",
+                "--section",
+                "compact_summary",
+            ],
+            cwd=ROOT,
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+        self.assertIn("logistics-control-compact-summary-v1", result.stdout)
+
+
+if __name__ == "__main__":
+    unittest.main()
