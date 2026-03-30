@@ -8,8 +8,9 @@ version = "0.1.0"
 description = "Logistics control tower with pipeline automation, service health, review surfaces, and Streamlit operations dashboard."
 readme = "README.md"
 requires-python = ">=3.11"
-authors = [{ name = "Kim" }]
+authors = [{name = "Doeon Kim", email = "ehdjs1351@gmail.com"}]
 license = "MIT"
+keywords = ["logistics", "ml-prediction", "shap", "streamlit", "rdf-ontology"]
 dependencies = [
   "joblib>=1.4",
   "numpy>=1.24",

@@ -19,3 +19,4 @@ data/model/
 data/semantic/
 .codex_runs/
 .omc/
+dist/
