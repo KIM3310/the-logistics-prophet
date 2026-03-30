@@ -20,3 +20,4 @@ data/semantic/
 .codex_runs/
 .omc/
 dist/
+.mypy_cache/

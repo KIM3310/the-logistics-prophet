@@ -57,3 +57,6 @@ disable_error_code = ["arg-type", "call-overload", "attr-defined", "index", "mis
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-q"
+
+[project.urls]
+Repository = "https://github.com/KIM3310/the-logistics-prophet"
