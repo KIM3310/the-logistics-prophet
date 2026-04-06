@@ -21,3 +21,4 @@ data/semantic/
 .omc/
 dist/
 .mypy_cache/
+tools/*.env

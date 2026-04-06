@@ -2,7 +2,7 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-CONFIG_FILE="$ROOT/tools/cloudflare_pages.env"
+CONFIG_FILE="$ROOT/tools/cloudflare_pages.config"
 STRICT_ADSENSE_VALUES="${STRICT_ADSENSE_VALUES:-0}"
 
 if [[ -f "$CONFIG_FILE" ]]; then
